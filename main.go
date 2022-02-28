@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
-	log.Printf("Database: %s", "hello")
-	web.StartWebServer("localhost:9001")
+	address := "localhost:9001"
+	log.Printf("Loading texto on %s", address)
+	web.StartWebServer(address)
 }

@@ -3,12 +3,14 @@
 <h1>All Blog Posts</h1>
 
 <div class="row">
+  {{ range $key, $blog := . }}
     <div class="col-lg-4">
       <h2>
-        <a href="#">Title</a>
+        <a href="#">{{ $blog.Title }}</a>
       </h2>
-      <p>blog summary</p>
+      <p>{{ $blog.Content }}</p>
     </div>
+  {{ end }}
 </div>
 
 {{ end }}

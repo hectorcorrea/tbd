@@ -4,12 +4,32 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+
+	"github.com/hectorcorrea/texto/textdb"
 )
 
 var blogRouter Router
 
 func init() {
 	blogRouter.Add("GET", "/blog", blogViewAll)
+	blogRouter.Add("GET", "/blog/:id", blogOne)
+}
+
+func blogViewAll(s session, values map[string]string) {
+	db := textdb.TextDb{RootDir: "./data/"}
+	vm := db.ListAll()
+	renderTemplate(s, "views/blogList.html", vm)
+}
+
+func blogOne(s session, values map[string]string) {
+	vm := ""
+	renderTemplate(s, "views/blogOne.html", vm)
+}
+
+func homePage(resp http.ResponseWriter, req *http.Request) {
+	vm := ""
+	session := newSession(resp, req)
+	renderTemplate(session, "views/home.html", vm)
 }
 
 func blogPages(resp http.ResponseWriter, req *http.Request) {
@@ -46,11 +66,6 @@ func renderTemplate(s session, viewName string, viewModel interface{}) {
 	}
 }
 
-func blogViewAll(s session, values map[string]string) {
-	vm := ""
-	renderTemplate(s, "views/blogList.html", vm)
-}
-
 func StartWebServer(address string) {
 	log.Printf("Listening for requests at %s\n", "http://"+address)
 
@@ -59,6 +74,7 @@ func StartWebServer(address string) {
 	http.Handle("/robots.txt", fs)
 	http.Handle("/public/", http.StripPrefix("/public/", fs))
 	http.HandleFunc("/blog/", blogPages)
+	http.HandleFunc("/", homePage)
 
 	err := http.ListenAndServe(address, nil)
 	if err != nil {
