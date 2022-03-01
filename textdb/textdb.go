@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -22,10 +23,28 @@ type TextDb struct {
 	RootDir string
 }
 
+func InitTextDb(rootDir string) TextDb {
+	file, err := os.Open(rootDir)
+
+	if os.IsNotExist(err) {
+		log.Printf("Creating %s ...", rootDir)
+		err = os.Mkdir(rootDir, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if err != nil {
+		log.Fatal(err)
+	} else {
+		log.Printf("Directory %s already exists...", rootDir)
+	}
+
+	defer file.Close()
+	return TextDb{RootDir: rootDir}
+}
+
 func (db *TextDb) ListAll() []TextEntry {
-	rootDir := "./data/"
 	entries := []TextEntry{}
-	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(db.RootDir, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			metadata := readMetadata(path + "/metadata.xml")
 			entry := TextEntry{
@@ -34,13 +53,6 @@ func (db *TextDb) ListAll() []TextEntry {
 			}
 			entries = append(entries, entry)
 		}
-		// if !info.IsDir() {
-		// 	entry := TextEntry{
-		// 		Title:   path,
-		// 		Content: readOne(path),
-		// 	}
-		// 	entries = append(entries, entry)
-		// }
 		return nil
 	})
 

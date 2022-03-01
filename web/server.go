@@ -9,6 +9,7 @@ import (
 )
 
 var blogRouter Router
+var db textdb.TextDb
 
 func init() {
 	blogRouter.Add("GET", "/blog", blogViewAll)
@@ -16,7 +17,6 @@ func init() {
 }
 
 func blogViewAll(s session, values map[string]string) {
-	db := textdb.TextDb{RootDir: "./data/"}
 	vm := db.ListAll()
 	renderTemplate(s, "views/blogList.html", vm)
 }
@@ -66,8 +66,9 @@ func renderTemplate(s session, viewName string, viewModel interface{}) {
 	}
 }
 
-func StartWebServer(address string) {
-	log.Printf("Listening for requests at %s\n", "http://"+address)
+func StartWebServer(settings Settings) {
+	log.Printf("Listening for requests at %s\n", "http://"+settings.Address)
+	db = textdb.InitTextDb(settings.DataFolder)
 
 	fs := http.FileServer(http.Dir("./public"))
 	http.Handle("/favicon.ico", fs)
@@ -76,7 +77,7 @@ func StartWebServer(address string) {
 	http.HandleFunc("/blog/", blogPages)
 	http.HandleFunc("/", homePage)
 
-	err := http.ListenAndServe(address, nil)
+	err := http.ListenAndServe(settings.Address, nil)
 	if err != nil {
 		log.Fatal("Failed to start the web server: ", err)
 	}
