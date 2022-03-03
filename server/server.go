@@ -19,6 +19,7 @@ func init() {
 }
 
 func recordAll(s common.Session, values map[string]string) {
+	// entries := db.ListAll()
 	fmt.Fprint(s.Resp, "record all")
 }
 
@@ -34,7 +35,7 @@ func recordNew(s common.Session, values map[string]string) {
 	fmt.Fprint(s.Resp, "created new")
 }
 
-func recordPages(resp http.ResponseWriter, req *http.Request) {
+func dispatcher(resp http.ResponseWriter, req *http.Request) {
 	session := common.NewSession(resp, req)
 	found, route := router.FindRoute(req.Method, req.URL.Path)
 	if found {
@@ -48,7 +49,7 @@ func recordPages(resp http.ResponseWriter, req *http.Request) {
 func StartWebServer(settings Settings) {
 	log.Printf("Listening for requests at %s\n", "http://"+settings.Address)
 	db = textdb.InitTextDb(settings.DataFolder)
-	http.HandleFunc("/record/", recordPages)
+	http.HandleFunc("/record/", dispatcher)
 
 	err := http.ListenAndServe(settings.Address, nil)
 	if err != nil {
