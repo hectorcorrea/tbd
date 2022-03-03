@@ -6,8 +6,9 @@
   {{ range $key, $blog := . }}
     <div class="col-lg-4">
       <h2>
-        <a href="#">{{ $blog.Title }}</a>
+        <a href="#">{{ $blog.Metadata.Title }}</a>
       </h2>
+      <p>path: {{ $blog.Path }}</p>
       <p>{{ $blog.Content }}</p>
     </div>
   {{ end }}
