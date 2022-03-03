@@ -8,7 +8,7 @@ type Settings struct {
 func InitSiteSettings(address string, dataFolder string) Settings {
 	settings := Settings{
 		Address:    "localhost:9001",
-		DataFolder: "./data/",
+		DataFolder: "./data",
 	}
 	return settings
 }

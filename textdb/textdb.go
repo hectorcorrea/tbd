@@ -30,6 +30,10 @@ type TextDb struct {
 }
 
 func InitTextDb(rootDir string) TextDb {
+	rootDir, err := filepath.Abs(rootDir)
+	if err != nil {
+		log.Fatal(err)
+	}
 	file, err := os.Open(rootDir)
 
 	if os.IsNotExist(err) {
@@ -62,37 +66,38 @@ func (db *TextDb) CreateNewEntry() error {
 	metadata := Metadata{Title: "new", Author: "", Slug: "new-entry"}
 	content := "(to be defined)"
 	path := db.getNextPath()
-	logInfo("Path calculated", path)
 	entry := TextEntry{Metadata: metadata, Content: content, Path: path}
 	return db.SaveEntry(entry)
 }
 
-// Gets the path for a new record created today
+// Gets the path for a new record created today.
+// For now all records are at the db.RootDir + date + sequence.
+// In the future we might break that down by year or year + month.
 func (db *TextDb) getNextPath() string {
 	today := time.Now().Format("2006-01-02")
 	sequence := db.getNextSequence(today)
-	// fmt.Sprintf("%05d", nextSequence)
-	path := fmt.Sprintf("%s%s-%05d", db.RootDir, today, sequence)
+	basePath := filepath.Join(db.RootDir, today)
+	path := fmt.Sprintf("%s-%05d", basePath, sequence)
 	return path
 }
 
-// Notice that we panic here for errors since if we get into an error
-// we don't want to risk blowing up existing data
 func (db *TextDb) getNextSequence(date string) int {
 	// Get all the directories for the given date...
-	mask := db.RootDir + "/" + date + "*"
+	mask := filepath.Join(db.RootDir, date) + "-*"
 	directories, err := filepath.Glob(mask)
 	if err != nil {
+		// This is bad, stop the presses
 		panic(err)
 	}
 
-	// ...get the max sequence number in the list of directories
+	// ...and find the max sequence number from them
 	maxSequence := 0
-	prefix := db.RootDir + date + "-"
+	prefix := filepath.Join(db.RootDir, date) + "-"
 	for _, directory := range directories {
-		sequenceStr := strings.TrimPrefix("./"+directory, prefix)
+		sequenceStr := strings.TrimPrefix(directory, prefix)
 		sequence, err := strconv.Atoi(sequenceStr)
 		if err != nil {
+			// Unexpected but not fatal
 			logError("Unexpected directory found", directory, err)
 		} else if sequence > maxSequence {
 			maxSequence = sequence
@@ -129,12 +134,12 @@ func saveMetadata(entry TextEntry) error {
 		return err
 	}
 	// ... and save it.
-	filename := entry.Path + "/metadata.xml"
+	filename := filepath.Join(entry.Path, "metadata.xml")
 	return ioutil.WriteFile(filename, buffer.Bytes(), 0644)
 }
 
 func saveContent(entry TextEntry) error {
-	filename := entry.Path + "/content.md"
+	filename := filepath.Join(entry.Path, "content.md")
 	return ioutil.WriteFile(filename, []byte(entry.Content), 0644)
 }
 
@@ -145,11 +150,11 @@ func (db *TextDb) ListAll() []TextEntry {
 			return nil
 		}
 		if info.IsDir() {
-			metadata := readMetadata(path + "/metadata.xml")
+			metadata := readMetadata(filepath.Join(path, "metadata.xml"))
 			entry := TextEntry{
 				Path:     path,
 				Metadata: metadata,
-				Content:  readContent(path + "/content.md"),
+				Content:  readContent(filepath.Join(path, "content.md")),
 			}
 			entries = append(entries, entry)
 		}
