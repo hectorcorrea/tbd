@@ -1,16 +1,10 @@
 package textdb
 
 import (
-	"bytes"
-	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Metadata struct {
@@ -52,15 +46,6 @@ func InitTextDb(rootDir string) TextDb {
 	return TextDb{RootDir: rootDir}
 }
 
-func dirExist(name string) bool {
-	file, err := os.Open(name)
-	if os.IsNotExist(err) {
-		return false
-	}
-	defer file.Close()
-	return true
-}
-
 // Creates a new record for today and initalizes it
 func (db *TextDb) CreateNewEntry() error {
 	metadata := Metadata{Title: "new", Author: "", Slug: "new-entry"}
@@ -68,44 +53,6 @@ func (db *TextDb) CreateNewEntry() error {
 	path := db.getNextPath()
 	entry := TextEntry{Metadata: metadata, Content: content, Path: path}
 	return db.SaveEntry(entry)
-}
-
-// Gets the path for a new record created today.
-// For now all records are at the db.RootDir + date + sequence.
-// In the future we might break that down by year or year + month.
-func (db *TextDb) getNextPath() string {
-	today := time.Now().Format("2006-01-02")
-	sequence := db.getNextSequence(today)
-	basePath := filepath.Join(db.RootDir, today)
-	path := fmt.Sprintf("%s-%05d", basePath, sequence)
-	return path
-}
-
-func (db *TextDb) getNextSequence(date string) int {
-	// Get all the directories for the given date...
-	mask := filepath.Join(db.RootDir, date) + "-*"
-	directories, err := filepath.Glob(mask)
-	if err != nil {
-		// This is bad, stop the presses
-		panic(err)
-	}
-
-	// ...and find the max sequence number from them
-	maxSequence := 0
-	prefix := filepath.Join(db.RootDir, date) + "-"
-	for _, directory := range directories {
-		sequenceStr := strings.TrimPrefix(directory, prefix)
-		sequence, err := strconv.Atoi(sequenceStr)
-		if err != nil {
-			// Unexpected but not fatal
-			logError("Unexpected directory found", directory, err)
-		} else if sequence > maxSequence {
-			maxSequence = sequence
-		}
-	}
-
-	// ...increase the sequence number by one
-	return maxSequence + 1
 }
 
 func (db *TextDb) SaveEntry(entry TextEntry) error {
@@ -121,26 +68,6 @@ func (db *TextDb) SaveEntry(entry TextEntry) error {
 		err = saveContent(entry)
 	}
 	return err
-}
-
-func saveMetadata(entry TextEntry) error {
-	// Convert our Metadata struct to an XML string...
-	xmlDeclaration := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-	buffer := bytes.NewBufferString(xmlDeclaration)
-	encoder := xml.NewEncoder(buffer)
-	encoder.Indent("  ", "    ")
-	err := encoder.Encode(entry.Metadata)
-	if err != nil {
-		return err
-	}
-	// ... and save it.
-	filename := filepath.Join(entry.Path, "metadata.xml")
-	return ioutil.WriteFile(filename, buffer.Bytes(), 0644)
-}
-
-func saveContent(entry TextEntry) error {
-	filename := filepath.Join(entry.Path, "content.md")
-	return ioutil.WriteFile(filename, []byte(entry.Content), 0644)
 }
 
 func (db *TextDb) ListAll() []TextEntry {
@@ -166,28 +93,6 @@ func (db *TextDb) ListAll() []TextEntry {
 	}
 
 	return entries
-}
-
-func readMetadata(filename string) Metadata {
-	reader, err := os.Open(filename)
-	if err != nil {
-		logError("Error reading metadata file", filename, err)
-	}
-	defer reader.Close()
-
-	// Read the bytes and unmarshall into our metadata struct
-	byteValue, _ := ioutil.ReadAll(reader)
-	var metadata Metadata
-	xml.Unmarshal(byteValue, &metadata)
-	return metadata
-}
-
-func readContent(filename string) string {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		logError("Error reading content file", filename, err)
-	}
-	return string(content)
 }
 
 func logInfo(message string, parameter string) {
