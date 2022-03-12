@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -13,26 +14,47 @@ var router common.Router
 var db textdb.TextDb
 
 func init() {
-	router.Add("POST", "/record/new", recordNew)
-	router.Add("GET", "/record", recordAll)
-	router.Add("GET", "/record/:id", recordOne)
+	router.Add("POST", "/doc/new", docNew)
+	router.Add("GET", "/doc", docAll)
+	router.Add("GET", "/doc/:id", docOne)
 }
 
-func recordAll(s common.Session, values map[string]string) {
-	// entries := db.ListAll()
-	fmt.Fprint(s.Resp, "record all")
+func docAll(s common.Session, values map[string]string) {
+	vm := db.ListAll()
+	renderTemplate(s, "views/all.html", vm)
 }
 
-func recordOne(s common.Session, values map[string]string) {
-	fmt.Fprint(s.Resp, "record id")
-}
-
-func recordNew(s common.Session, values map[string]string) {
-	err := db.CreateNewEntry()
+func docOne(s common.Session, values map[string]string) {
+	id := values["id"]
+	vm, err := db.ReadEntry(id)
 	if err != nil {
-		fmt.Fprint(s.Resp, err)
+		log.Printf("Error reading document %s: %s", id, err)
+		renderTemplate(s, "views/error.html", vm)
+		return
 	}
-	fmt.Fprint(s.Resp, "created new")
+	renderTemplate(s, "views/one.html", vm)
+}
+
+func docNew(s common.Session, values map[string]string) {
+	entry, err := db.NewEntry()
+	if err != nil {
+		log.Printf("Error creating new document: %s", err)
+		http.Error(s.Resp, "Error processing request", http.StatusInternalServerError)
+		return
+	}
+
+	qs := s.Req.URL.Query()
+	if len(qs["redirect"]) > 0 {
+		url := fmt.Sprintf("/doc/%s", entry.Id)
+		log.Printf("Created %s, redirecting to %s", entry.Id, url)
+		http.Redirect(s.Resp, s.Req, url, 301)
+		return
+	}
+
+	log.Printf("Created %s", entry.Id)
+	payload := "{ \"path\":\"" + entry.Id + "\" }"
+	s.Resp.Header().Add("Content-Type", "text/json")
+	fmt.Fprint(s.Resp, payload)
 }
 
 func dispatcher(resp http.ResponseWriter, req *http.Request) {
@@ -49,10 +71,33 @@ func dispatcher(resp http.ResponseWriter, req *http.Request) {
 func StartWebServer(settings Settings) {
 	log.Printf("Listening for requests at %s\n", "http://"+settings.Address)
 	db = textdb.InitTextDb(settings.DataFolder)
-	http.HandleFunc("/record/", dispatcher)
+	http.HandleFunc("/doc/", dispatcher)
 
 	err := http.ListenAndServe(settings.Address, nil)
 	if err != nil {
 		log.Fatal("Failed to start the web server: ", err)
+	}
+}
+
+func renderTemplate(s common.Session, viewName string, viewModel interface{}) {
+	t, err := loadTemplate(s, viewName)
+	if err != nil {
+		log.Printf("Error loading: %s, %s ", viewName, err)
+	} else {
+		err = t.Execute(s.Resp, viewModel)
+		if err != nil {
+			log.Printf("Error rendering: %s, %s ", viewName, err)
+		}
+	}
+}
+
+func loadTemplate(s common.Session, viewName string) (*template.Template, error) {
+	t, err := template.New("layout").ParseFiles("views/layout.html", viewName)
+	if err != nil {
+		log.Printf("Error loading template %s (%s)", viewName, s.Req.URL.Path)
+		return nil, err
+	} else {
+		log.Printf("Loaded template %s (%s)", viewName, s.Req.URL.Path)
+		return t, nil
 	}
 }

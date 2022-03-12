@@ -1,23 +1,12 @@
 package textdb
 
 import (
-	"fmt"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
-
-type Metadata struct {
-	Slug   string `xml:"slug"`
-	Title  string `xml:"title"`
-	Author string `xml:"author"`
-}
-
-type TextEntry struct {
-	Metadata Metadata
-	Content  string
-	Path     string
-}
 
 type TextDb struct {
 	RootDir string
@@ -47,25 +36,26 @@ func InitTextDb(rootDir string) TextDb {
 }
 
 // Creates a new record for today and initalizes it
-func (db *TextDb) CreateNewEntry() error {
+func (db *TextDb) NewEntry() (TextEntry, error) {
 	metadata := Metadata{Title: "new", Author: "", Slug: "new-entry"}
 	content := "(to be defined)"
-	path := db.getNextPath()
-	entry := TextEntry{Metadata: metadata, Content: content, Path: path}
-	return db.SaveEntry(entry)
+	id := db.getNextId()
+	entry := TextEntry{Metadata: metadata, Content: content, Id: id}
+	return entry, db.SaveEntry(entry)
 }
 
 func (db *TextDb) SaveEntry(entry TextEntry) error {
-	if !dirExist(entry.Path) {
-		logInfo("Creating path", entry.Path)
-		if err := os.MkdirAll(entry.Path, os.ModePerm); err != nil {
-			logError("Error creating path", entry.Path, err)
+	path := db.entryPath(entry)
+	if !dirExist(path) {
+		logInfo("Creating path", path)
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
+			logError("Error creating path", path, err)
 			return err
 		}
 	}
-	err := saveMetadata(entry)
+	err := saveMetadata(path, entry)
 	if err == nil {
-		err = saveContent(entry)
+		err = saveContent(path, entry)
 	}
 	return err
 }
@@ -77,22 +67,47 @@ func (db *TextDb) ListAll() []TextEntry {
 			return nil
 		}
 		if info.IsDir() {
-			metadata := readMetadata(filepath.Join(path, "metadata.xml"))
-			entry := TextEntry{
-				Path:     path,
-				Metadata: metadata,
-				Content:  readContent(filepath.Join(path, "content.md")),
+			id := idFromPath(path)
+			entry, err := db.ReadEntry(id)
+			if err == nil {
+				entries = append(entries, entry)
 			}
-			entries = append(entries, entry)
 		}
 		return nil
 	})
 
 	if err != nil {
-		fmt.Println(err)
+		logError("ListAll error walking file system", "", err)
 	}
 
 	return entries
+}
+
+func (db *TextDb) ReadEntry(id string) (TextEntry, error) {
+	// TODO: validate the ID cannot walk paths
+	path := filepath.Join(db.RootDir, id)
+	if !dirExist(path) {
+		logError("ReadEntry did not find path", path, nil)
+		return TextEntry{}, errors.New("Path not found")
+	}
+
+	entry := TextEntry{
+		Id:       idFromPath(path),
+		Metadata: readMetadata(filepath.Join(path, "metadata.xml")),
+		Content:  readContent(filepath.Join(path, "content.md")),
+	}
+	return entry, nil
+}
+
+// Returns the full path to an entry
+func (db *TextDb) entryPath(entry TextEntry) string {
+	return filepath.Join(db.RootDir, entry.Id)
+}
+
+// Returns the Id from a path (i.e. the last segment of the path)
+func idFromPath(path string) string {
+	pathTokens := strings.Split(path, string(os.PathSeparator))
+	return pathTokens[len(pathTokens)-1]
 }
 
 func logInfo(message string, parameter string) {

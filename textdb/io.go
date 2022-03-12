@@ -39,12 +39,12 @@ func readMetadata(filename string) Metadata {
 	return metadata
 }
 
-func saveContent(entry TextEntry) error {
-	filename := filepath.Join(entry.Path, "content.md")
+func saveContent(path string, entry TextEntry) error {
+	filename := filepath.Join(path, "content.md")
 	return ioutil.WriteFile(filename, []byte(entry.Content), 0644)
 }
 
-func saveMetadata(entry TextEntry) error {
+func saveMetadata(path string, entry TextEntry) error {
 	// Convert our Metadata struct to an XML string...
 	xmlDeclaration := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
 	buffer := bytes.NewBufferString(xmlDeclaration)
@@ -55,6 +55,6 @@ func saveMetadata(entry TextEntry) error {
 		return err
 	}
 	// ... and save it.
-	filename := filepath.Join(entry.Path, "metadata.xml")
+	filename := filepath.Join(path, "metadata.xml")
 	return ioutil.WriteFile(filename, buffer.Bytes(), 0644)
 }

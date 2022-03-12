@@ -8,15 +8,14 @@ import (
 	"time"
 )
 
-// Gets the path for a new record created today.
-// For now all records are at the db.RootDir + date + sequence.
+// Gets the ID for a new record created today.
+// For now all IDs are generated as today's date + sequence.
 // In the future we might break that down by year or year + month.
-func (db *TextDb) getNextPath() string {
-	today := time.Now().Format("2006-01-02")
+func (db *TextDb) getNextId() string {
+	today := time.Now().Format("2006-01-02") // yyyy-mm-dd
 	sequence := db.getNextSequence(today)
-	basePath := filepath.Join(db.RootDir, today)
-	path := fmt.Sprintf("%s-%05d", basePath, sequence)
-	return path
+	id := fmt.Sprintf("%s-%05d", today, sequence) // yyyy-mm-dd-00000
+	return id
 }
 
 func (db *TextDb) getNextSequence(date string) int {
