@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type TextDb struct {
@@ -37,14 +38,27 @@ func InitTextDb(rootDir string) TextDb {
 
 // Creates a new record for today and initalizes it
 func (db *TextDb) NewEntry() (TextEntry, error) {
-	metadata := Metadata{Title: "new", Author: "", Slug: "new-entry"}
 	content := "(to be defined)"
 	id := db.getNextId()
+	now := time.Now().Format("2006-01-02 15:04:05.000")
+	metadata := Metadata{
+		Title:     "new " + id,
+		Author:    "",
+		Slug:      id,
+		CreatedOn: now,
+	}
 	entry := TextEntry{Metadata: metadata, Content: content, Id: id}
-	return entry, db.SaveEntry(entry)
+	return entry, db.saveEntry(entry)
 }
 
-func (db *TextDb) SaveEntry(entry TextEntry) error {
+// Saves an existing entry, automatically sets the UpdatedOn value
+func (db *TextDb) UpdateEntry(entry TextEntry) error {
+	now := time.Now().Format("2006-01-02 15:04:05.000")
+	entry.Metadata.UpdatedOn = now
+	return db.saveEntry(entry)
+}
+
+func (db *TextDb) saveEntry(entry TextEntry) error {
 	path := db.entryPath(entry)
 	if !dirExist(path) {
 		logInfo("Creating path", path)
@@ -68,7 +82,7 @@ func (db *TextDb) ListAll() []TextEntry {
 		}
 		if info.IsDir() {
 			id := idFromPath(path)
-			entry, err := db.ReadEntry(id)
+			entry, err := db.readEntry(id)
 			if err == nil {
 				entries = append(entries, entry)
 			}
@@ -83,7 +97,16 @@ func (db *TextDb) ListAll() []TextEntry {
 	return entries
 }
 
-func (db *TextDb) ReadEntry(id string) (TextEntry, error) {
+func (db *TextDb) FindBySlug(slug string) (bool, TextEntry) {
+	for _, entry := range db.ListAll() {
+		if entry.Metadata.Slug == slug {
+			return true, entry
+		}
+	}
+	return false, TextEntry{}
+}
+
+func (db *TextDb) readEntry(id string) (TextEntry, error) {
 	// TODO: validate the ID cannot walk paths
 	path := filepath.Join(db.RootDir, id)
 	if !dirExist(path) {

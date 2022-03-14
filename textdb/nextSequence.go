@@ -18,6 +18,7 @@ func (db *TextDb) getNextId() string {
 	return id
 }
 
+// Gets the next sequence number for a given date.
 func (db *TextDb) getNextSequence(date string) int {
 	// Get all the directories for the given date...
 	mask := filepath.Join(db.RootDir, date) + "-*"
