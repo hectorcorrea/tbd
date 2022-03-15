@@ -19,3 +19,11 @@ type TextEntry struct {
 	Content  string
 	Id       string
 }
+
+func (entry *TextEntry) setSlug() {
+	entry.Metadata.Slug = slug(entry.Metadata.Title)
+}
+
+func (entry *TextEntry) setUpdated() {
+	entry.Metadata.UpdatedOn = now()
+}

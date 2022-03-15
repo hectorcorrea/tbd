@@ -85,7 +85,7 @@ func docSave(s Session, values map[string]string) {
 
 	log.Printf("Values: %#v", entry)
 
-	err = db.UpdateEntry(entry)
+	entry, err = db.UpdateEntry(entry)
 	if err != nil {
 		log.Printf("Error saving document: %s", err)
 		http.Error(s.Resp, "Error processing request", http.StatusInternalServerError)

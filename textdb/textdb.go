@@ -6,11 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
-
-const time_format_now string = "2006-01-02 15:04:05.000" // yyyy-mm-dd hh:mm:ss.xxx
-const time_format_today string = "2006-01-02"            // yyyy-mm-dd
 
 type TextDb struct {
 	RootDir string
@@ -39,42 +35,48 @@ func InitTextDb(rootDir string) TextDb {
 	return TextDb{RootDir: rootDir}
 }
 
-// Creates a new record for today and initalizes it
+// Creates a new record and initalizes it
 func (db *TextDb) NewEntry() (TextEntry, error) {
 	content := "(to be defined)"
 	id := db.getNextId()
-	now := time.Now().Format(time_format_now)
 	metadata := Metadata{
 		Title:     "new " + id,
 		Author:    "",
-		Slug:      id,
-		CreatedOn: now,
+		CreatedOn: now(),
 	}
 	entry := TextEntry{Metadata: metadata, Content: content, Id: id}
-	return entry, db.saveEntry(entry)
-}
-
-// Saves an existing entry, automatically sets the UpdatedOn value
-func (db *TextDb) UpdateEntry(entry TextEntry) error {
-	now := time.Now().Format(time_format_now)
-	entry.Metadata.UpdatedOn = now
 	return db.saveEntry(entry)
 }
 
-func (db *TextDb) saveEntry(entry TextEntry) error {
+// Saves an existing entry
+func (db *TextDb) UpdateEntry(entry TextEntry) (TextEntry, error) {
+	entry.setUpdated()
+	return db.saveEntry(entry)
+}
+
+func (db *TextDb) saveEntry(entry TextEntry) (TextEntry, error) {
+	// Always set the slug before saving and make sure the Id
+	// still is valid.
+	entry.setSlug()
+	err := validId(entry.Id)
+	if err != nil {
+		return entry, err
+	}
+	// Create the directory for it if it does not exist
 	path := db.entryPath(entry)
 	if !dirExist(path) {
 		logInfo("Creating path", path)
 		if err := os.MkdirAll(path, os.ModePerm); err != nil {
 			logError("Error creating path", path, err)
-			return err
+			return entry, err
 		}
 	}
-	err := saveMetadata(path, entry)
+	// Save metadata + content
+	err = saveMetadata(path, entry)
 	if err == nil {
 		err = saveContent(path, entry)
 	}
-	return err
+	return entry, err
 }
 
 func (db *TextDb) All() []TextEntry {
@@ -101,7 +103,10 @@ func (db *TextDb) All() []TextEntry {
 }
 
 func (db *TextDb) FindById(id string) (TextEntry, error) {
-	// TODO: validate the ID cannot walk paths
+	err := validId(id)
+	if err != nil {
+		return TextEntry{}, err
+	}
 	return db.readEntry(id)
 }
 
@@ -138,12 +143,4 @@ func (db *TextDb) entryPath(entry TextEntry) string {
 func idFromPath(path string) string {
 	pathTokens := strings.Split(path, string(os.PathSeparator))
 	return pathTokens[len(pathTokens)-1]
-}
-
-func logInfo(message string, parameter string) {
-	log.Printf("textdb: %s %s", message, parameter)
-}
-
-func logError(message string, parameter string, err error) {
-	log.Printf("textdb: %s %s. ERROR: %s", message, parameter, err)
 }
