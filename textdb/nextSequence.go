@@ -12,7 +12,7 @@ import (
 // For now all IDs are generated as today's date + sequence.
 // In the future we might break that down by year or year + month.
 func (db *TextDb) getNextId() string {
-	today := time.Now().Format("2006-01-02") // yyyy-mm-dd
+	today := time.Now().Format(time_format_today)
 	sequence := db.getNextSequence(today)
 	id := fmt.Sprintf("%s-%05d", today, sequence) // yyyy-mm-dd-00000
 	return id

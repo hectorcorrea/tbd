@@ -9,6 +9,9 @@ import (
 	"time"
 )
 
+const time_format_now string = "2006-01-02 15:04:05.000" // yyyy-mm-dd hh:mm:ss.xxx
+const time_format_today string = "2006-01-02"            // yyyy-mm-dd
+
 type TextDb struct {
 	RootDir string
 }
@@ -40,7 +43,7 @@ func InitTextDb(rootDir string) TextDb {
 func (db *TextDb) NewEntry() (TextEntry, error) {
 	content := "(to be defined)"
 	id := db.getNextId()
-	now := time.Now().Format("2006-01-02 15:04:05.000")
+	now := time.Now().Format(time_format_now)
 	metadata := Metadata{
 		Title:     "new " + id,
 		Author:    "",
@@ -53,7 +56,7 @@ func (db *TextDb) NewEntry() (TextEntry, error) {
 
 // Saves an existing entry, automatically sets the UpdatedOn value
 func (db *TextDb) UpdateEntry(entry TextEntry) error {
-	now := time.Now().Format("2006-01-02 15:04:05.000")
+	now := time.Now().Format(time_format_now)
 	entry.Metadata.UpdatedOn = now
 	return db.saveEntry(entry)
 }
@@ -74,7 +77,7 @@ func (db *TextDb) saveEntry(entry TextEntry) error {
 	return err
 }
 
-func (db *TextDb) ListAll() []TextEntry {
+func (db *TextDb) All() []TextEntry {
 	entries := []TextEntry{}
 	err := filepath.Walk(db.RootDir, func(path string, info os.FileInfo, err error) error {
 		if path == db.RootDir {
@@ -103,7 +106,7 @@ func (db *TextDb) FindById(id string) (TextEntry, error) {
 }
 
 func (db *TextDb) FindBySlug(slug string) (TextEntry, bool) {
-	for _, entry := range db.ListAll() {
+	for _, entry := range db.All() {
 		if entry.Metadata.Slug == slug {
 			return entry, true
 		}

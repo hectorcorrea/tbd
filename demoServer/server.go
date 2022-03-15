@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/hectorcorrea/texto/textdb"
+	"github.com/hectorcorrea/tbd/textdb"
 )
 
 var router Router
@@ -21,7 +21,7 @@ func init() {
 }
 
 func docAll(s Session, values map[string]string) {
-	vm := db.ListAll()
+	vm := db.All()
 	renderTemplate(s, "views/all.html", vm)
 }
 

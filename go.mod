@@ -1,3 +1,3 @@
-module github.com/hectorcorrea/texto
+module github.com/hectorcorrea/tbd
 
 go 1.17
