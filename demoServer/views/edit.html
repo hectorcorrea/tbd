@@ -1,0 +1,17 @@
+{{ define "content" }}
+<h1>{{ $.Metadata.Title }}</h1>
+
+<form action="/doc/{{ $.Id }}/save?redirect" method="POST">
+    <label for="title">Title:</label>
+    <input type="text" id="title" name="title" value="{{ .Metadata.Title }}"><br><br>
+
+    <label for="slug">Slug:</label>
+    <input type="text" id="slug" name="slug" value="{{ .Metadata.Slug }}"><br><br>
+
+    <input type="submit" value="Save">
+</form>
+
+<div>
+  <p>id: {{ $.Id }}</p>
+</div>
+{{ end }}

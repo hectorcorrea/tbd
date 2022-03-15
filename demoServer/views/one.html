@@ -5,6 +5,10 @@
   <p>{{ $.Content }}</p>
 </div>
 
+<form action="/doc/{{ $.Id }}/edit" method="post">
+  <button>Edit Document</button>
+</form>
+
 <div>
   <p>slug: {{ $.Metadata.Slug}}</p>
   <p>id: {{ $.Id }}</p>

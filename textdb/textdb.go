@@ -97,17 +97,21 @@ func (db *TextDb) ListAll() []TextEntry {
 	return entries
 }
 
-func (db *TextDb) FindBySlug(slug string) (bool, TextEntry) {
+func (db *TextDb) FindById(id string) (TextEntry, error) {
+	// TODO: validate the ID cannot walk paths
+	return db.readEntry(id)
+}
+
+func (db *TextDb) FindBySlug(slug string) (TextEntry, bool) {
 	for _, entry := range db.ListAll() {
 		if entry.Metadata.Slug == slug {
-			return true, entry
+			return entry, true
 		}
 	}
-	return false, TextEntry{}
+	return TextEntry{}, false
 }
 
 func (db *TextDb) readEntry(id string) (TextEntry, error) {
-	// TODO: validate the ID cannot walk paths
 	path := filepath.Join(db.RootDir, id)
 	if !dirExist(path) {
 		logError("ReadEntry did not find path", path, nil)
