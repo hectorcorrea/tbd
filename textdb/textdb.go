@@ -35,13 +35,30 @@ func InitTextDb(rootDir string) TextDb {
 	return TextDb{RootDir: rootDir}
 }
 
-// Creates a new record and initalizes it
+// NewEntry creates a new record and initializes it.
+// Uses today's date for the basis of the Id.
 func (db *TextDb) NewEntry() (TextEntry, error) {
 	content := "(to be defined)"
 	id := db.getNextId()
 	metadata := Metadata{
 		Title:     "new " + id,
 		CreatedOn: now(),
+	}
+	entry := TextEntry{Metadata: metadata, Content: content, Id: id}
+	return db.saveEntry(entry)
+}
+
+// NewEntryFor creates a new record for a specific date and time.
+// This is useful when importing existing data as it uses the given date for the basis
+// of the Id and sets the CreatedOn appropriately.
+// Date is expected to be in the form yyyy-mm-dd
+// Time is expected to be in the form HH:mm:ss.xxx
+func (db *TextDb) NewEntryFor(date string, time string) (TextEntry, error) {
+	content := "(to be defined)"
+	id := db.getNextIdFor(date)
+	metadata := Metadata{
+		Title:     "new " + id,
+		CreatedOn: date + " " + time,
 	}
 	entry := TextEntry{Metadata: metadata, Content: content, Id: id}
 	return db.saveEntry(entry)

@@ -17,6 +17,14 @@ func (db *TextDb) getNextId() string {
 	return id
 }
 
+// Gets the ID for a new record created on a given date.
+// Date is expected to be in the form yyyy-mm-dd
+func (db *TextDb) getNextIdFor(date string) string {
+	sequence := db.getNextSequence(date)
+	id := fmt.Sprintf("%s-%05d", date, sequence) // yyyy-mm-dd-00000
+	return id
+}
+
 // Gets the next sequence number for a given date.
 func (db *TextDb) getNextSequence(date string) int {
 	// Get all the directories for the given date...
