@@ -82,8 +82,13 @@ func docSave(s Session, values map[string]string) {
 
 	entry.Metadata.Title = s.Req.FormValue("title")
 	entry.Metadata.Slug = s.Req.FormValue("slug")
+	entry.Metadata.Summary = s.Req.FormValue("summary")
 
-	log.Printf("Values: %#v", entry)
+	if s.Req.FormValue("post") == "post" {
+		entry.MarkAsPosted()
+	} else if s.Req.FormValue("draft") == "draft" {
+		entry.MarkAsDraft()
+	}
 
 	entry, err = db.UpdateEntry(entry)
 	if err != nil {

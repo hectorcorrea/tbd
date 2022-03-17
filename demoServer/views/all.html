@@ -9,7 +9,11 @@
 <div class="row">
   <ul>
     {{ range $key, $doc := . }}
-      <li><a href="/doc/{{ $doc.Metadata.Slug }}">{{ $doc.Metadata.Title }}</a></li>
+      <li><a href="/doc/{{ $doc.Metadata.Slug }}">{{ $doc.Metadata.Title }}</a>
+      {{ if $doc.IsDraft }}
+        (draft)
+      {{ end }}
+      </li>
     {{ end }}
   </ul>
 </div>

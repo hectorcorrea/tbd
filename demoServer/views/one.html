@@ -3,9 +3,21 @@
   <a href="/doc">Show All</a>
 </div>
 <h1>{{ $.Metadata.Title }}</h1>
+<p>
+  posted on: 
+  {{ if $.IsDraft }}
+  (draft)
+  {{ else }}
+    {{ $.Metadata.PostedOn }}
+  {{ end }}
+</p>
 
 <div>
-  <p>{{ $.Content }}</p>
+  <p>{{ $.Metadata.Summary }}</p>
+</div>
+
+<div>
+  <p>Content: {{ $.Content }}</p>
 </div>
 
 <form action="/doc/{{ $.Id }}/edit" method="post">

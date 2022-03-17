@@ -5,13 +5,21 @@
     <label for="title">Title:</label>
     <input type="text" id="title" name="title" value="{{ .Metadata.Title }}"><br><br>
 
-    <label for="slug">Slug:</label>
-    <input type="text" id="slug" name="slug" value="{{ .Metadata.Slug }}"><br><br>
+    <label for="summary">Summary:</label>
+    <textarea id="summary" name="summary" rows="4" cols="50">{{ .Metadata.Summary }}</textarea>
 
-    <input type="submit" value="Save">
+    <div>
+      <button  name="save" id="save" type="submit" value="save">Save</button>
+      {{ if .IsDraft }}
+        <button name="post" id="post" type="submit" value="post">Post</button>
+      {{ else }}
+        <button name="draft" id="draft" type="submit" value="draft">Mark as draft</button>
+      {{ end }}
+    </div>
 </form>
 
 <div>
+  <p>slug: {{ $.Metadata.Slug }}</p>
   <p>id: {{ $.Id }}</p>
 </div>
 {{ end }}

@@ -41,7 +41,6 @@ func (db *TextDb) NewEntry() (TextEntry, error) {
 	id := db.getNextId()
 	metadata := Metadata{
 		Title:     "new " + id,
-		Author:    "",
 		CreatedOn: now(),
 	}
 	entry := TextEntry{Metadata: metadata, Content: content, Id: id}
