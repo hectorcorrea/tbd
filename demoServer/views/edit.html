@@ -1,25 +1,34 @@
 {{ define "content" }}
-<h1>{{ $.Metadata.Title }}</h1>
+<h1>{{ $.Title }}</h1>
 
 <form action="/doc/{{ $.Id }}/save?redirect" method="POST">
+  <div>
     <label for="title">Title:</label>
-    <input type="text" id="title" name="title" value="{{ .Metadata.Title }}"><br><br>
+    <input type="text" id="title" name="title" value="{{ .Title }}">
+  </div>
 
+  <div>
     <label for="summary">Summary:</label>
-    <textarea id="summary" name="summary" rows="4" cols="50">{{ .Metadata.Summary }}</textarea>
+    <textarea id="summary" name="summary" rows="4" cols="50">{{ .Summary }}</textarea>
+  </div>
 
-    <div>
-      <button  name="save" id="save" type="submit" value="save">Save</button>
-      {{ if .IsDraft }}
-        <button name="post" id="post" type="submit" value="post">Post</button>
-      {{ else }}
-        <button name="draft" id="draft" type="submit" value="draft">Mark as draft</button>
-      {{ end }}
-    </div>
+  <div>
+    <label for="content">Content:</label>
+    <textarea id="content" name="content" rows="10" cols="50">{{ .Content }}</textarea>
+  </div>
+
+  <div>
+    <button  name="save" id="save" type="submit" value="save">Save</button>
+    {{ if .IsDraft }}
+      <button name="post" id="post" type="submit" value="post">Post</button>
+    {{ else }}
+      <button name="draft" id="draft" type="submit" value="draft">Mark as draft</button>
+    {{ end }}
+  </div>
 </form>
 
 <div>
-  <p>slug: {{ $.Metadata.Slug }}</p>
+  <p>slug: {{ $.Slug }}</p>
   <p>id: {{ $.Id }}</p>
 </div>
 {{ end }}

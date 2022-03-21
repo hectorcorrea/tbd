@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/hectorcorrea/tbd/textdb"
+	"github.com/hectorcorrea/texto/textdb"
 )
 
 var router Router
@@ -59,14 +59,14 @@ func docNew(s Session, values map[string]string) {
 
 	qs := s.Req.URL.Query()
 	if len(qs["redirect"]) > 0 {
-		url := fmt.Sprintf("/doc/%s", entry.Metadata.Slug)
+		url := fmt.Sprintf("/doc/%s", entry.Slug)
 		log.Printf("Created %s, redirecting to %s", entry.Id, url)
 		http.Redirect(s.Resp, s.Req, url, 301)
 		return
 	}
 
-	log.Printf("Created %s %s", entry.Id, entry.Metadata.Slug)
-	payload := "{ \"slug\":\"" + entry.Metadata.Slug + "\" }"
+	log.Printf("Created %s %s", entry.Id, entry.Slug)
+	payload := "{ \"slug\":\"" + entry.Slug + "\" }"
 	s.Resp.Header().Add("Content-Type", "text/json")
 	fmt.Fprint(s.Resp, payload)
 }
@@ -80,9 +80,9 @@ func docSave(s Session, values map[string]string) {
 		return
 	}
 
-	entry.Metadata.Title = s.Req.FormValue("title")
-	entry.Metadata.Slug = s.Req.FormValue("slug")
-	entry.Metadata.Summary = s.Req.FormValue("summary")
+	entry.Title = s.Req.FormValue("title")
+	entry.Summary = s.Req.FormValue("summary")
+	entry.Content = s.Req.FormValue("content")
 
 	if s.Req.FormValue("post") == "post" {
 		entry.MarkAsPosted()
@@ -99,14 +99,14 @@ func docSave(s Session, values map[string]string) {
 
 	qs := s.Req.URL.Query()
 	if len(qs["redirect"]) > 0 {
-		url := fmt.Sprintf("/doc/%s", entry.Metadata.Slug)
+		url := fmt.Sprintf("/doc/%s", entry.Slug)
 		log.Printf("Saved %s, redirecting to %s", entry.Id, url)
 		http.Redirect(s.Resp, s.Req, url, 301)
 		return
 	}
 
 	log.Printf("Saved %s", entry.Id)
-	payload := "{ \"slug\":\"" + entry.Metadata.Slug + "\" }"
+	payload := "{ \"slug\":\"" + entry.Slug + "\" }"
 	s.Resp.Header().Add("Content-Type", "text/json")
 	fmt.Fprint(s.Resp, payload)
 }

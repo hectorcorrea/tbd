@@ -25,7 +25,7 @@ func readContent(filename string) string {
 	return string(content)
 }
 
-func readMetadata(filename string) Metadata {
+func readMetadata(filename string) TextEntry {
 	reader, err := os.Open(filename)
 	if err != nil {
 		logError("Error reading metadata file", filename, err)
@@ -34,9 +34,9 @@ func readMetadata(filename string) Metadata {
 
 	// Read the bytes and unmarshall into our metadata struct
 	byteValue, _ := ioutil.ReadAll(reader)
-	var metadata Metadata
+	var metadata TextEntryDisk
 	xml.Unmarshal(byteValue, &metadata)
-	return metadata
+	return NewTextEntryFromDisk("", metadata)
 }
 
 func saveContent(path string, entry TextEntry) error {
@@ -50,7 +50,9 @@ func saveMetadata(path string, entry TextEntry) error {
 	buffer := bytes.NewBufferString(xmlDeclaration)
 	encoder := xml.NewEncoder(buffer)
 	encoder.Indent("  ", "    ")
-	err := encoder.Encode(entry.Metadata)
+
+	disk := entry.ToTextEntryDisk()
+	err := encoder.Encode(disk)
 	if err != nil {
 		return err
 	}

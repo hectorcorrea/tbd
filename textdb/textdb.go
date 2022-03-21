@@ -38,13 +38,10 @@ func InitTextDb(rootDir string) TextDb {
 // NewEntry creates a new record and initializes it.
 // Uses today's date for the basis of the Id.
 func (db *TextDb) NewEntry() (TextEntry, error) {
-	content := "(to be defined)"
 	id := db.getNextId()
-	metadata := Metadata{
-		Title:     "new " + id,
-		CreatedOn: now(),
-	}
-	entry := TextEntry{Metadata: metadata, Content: content, Id: id}
+	entry := NewTextEntry(id)
+	entry.Title = "new " + id
+	entry.Content = "(content goes here)"
 	return db.saveEntry(entry)
 }
 
@@ -54,30 +51,29 @@ func (db *TextDb) NewEntry() (TextEntry, error) {
 // Date is expected to be in the form yyyy-mm-dd
 // Time is expected to be in the form HH:mm:ss.xxx
 func (db *TextDb) NewEntryFor(date string, time string) (TextEntry, error) {
-	content := "(to be defined)"
 	id := db.getNextIdFor(date)
-	metadata := Metadata{
-		Title:     "new " + id,
-		CreatedOn: date + " " + time,
-	}
-	entry := TextEntry{Metadata: metadata, Content: content, Id: id}
+	entry := NewTextEntry(id)
+	entry.Title = "new " + id
+	entry.Content = "(content goes here)"
+	entry.CreatedOn = date + " " + time
 	return db.saveEntry(entry)
 }
 
 // Saves an existing entry
 func (db *TextDb) UpdateEntry(entry TextEntry) (TextEntry, error) {
-	entry.setUpdated()
 	return db.saveEntry(entry)
 }
 
 func (db *TextDb) saveEntry(entry TextEntry) (TextEntry, error) {
 	// Always set the slug before saving and make sure the Id
 	// still is valid.
-	entry.setSlug()
 	err := validId(entry.Id)
 	if err != nil {
 		return entry, err
 	}
+
+	entry.Save()
+
 	// Create the directory for it if it does not exist
 	path := db.entryPath(entry)
 	if !dirExist(path) {
@@ -128,7 +124,7 @@ func (db *TextDb) FindById(id string) (TextEntry, error) {
 
 func (db *TextDb) FindBySlug(slug string) (TextEntry, bool) {
 	for _, entry := range db.All() {
-		if entry.Metadata.Slug == slug {
+		if entry.Slug == slug {
 			return entry, true
 		}
 	}
@@ -142,11 +138,9 @@ func (db *TextDb) readEntry(id string) (TextEntry, error) {
 		return TextEntry{}, errors.New("Path not found")
 	}
 
-	entry := TextEntry{
-		Id:       idFromPath(path),
-		Metadata: readMetadata(filepath.Join(path, "metadata.xml")),
-		Content:  readContent(filepath.Join(path, "content.md")),
-	}
+	entry := readMetadata(filepath.Join(path, "metadata.xml"))
+	entry.Id = idFromPath(path)
+	entry.Content = readContent(filepath.Join(path, "content.md"))
 	return entry, nil
 }
 
