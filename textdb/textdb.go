@@ -69,8 +69,6 @@ func (db *TextDb) UpdateEntryHonorDates(entry TextEntry) (TextEntry, error) {
 }
 
 func (db *TextDb) saveEntry(entry TextEntry, calculateDates bool) (TextEntry, error) {
-	// Always set the slug before saving and make sure the Id
-	// still is valid.
 	err := validId(entry.Id)
 	if err != nil {
 		return entry, err
@@ -118,6 +116,7 @@ func (db *TextDb) All() []TextEntry {
 	return entries
 }
 
+// Finds an entry by Id
 func (db *TextDb) FindById(id string) (TextEntry, error) {
 	err := validId(id)
 	if err != nil {
@@ -126,9 +125,20 @@ func (db *TextDb) FindById(id string) (TextEntry, error) {
 	return db.readEntry(id)
 }
 
+// Finds an entry by Slug
 func (db *TextDb) FindBySlug(slug string) (TextEntry, bool) {
 	for _, entry := range db.All() {
 		if entry.Slug == slug {
+			return entry, true
+		}
+	}
+	return TextEntry{}, false
+}
+
+// Finds an entry by a user defined field/value
+func (db *TextDb) FindBy(field string, value string) (TextEntry, bool) {
+	for _, entry := range db.All() {
+		if entry.GetField(field) == value {
 			return entry, true
 		}
 	}

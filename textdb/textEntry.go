@@ -24,8 +24,8 @@ func NewTextEntry(id string) TextEntry {
 	return TextEntry{Id: id}
 }
 
-func (doc *TextEntry) SetField(name string, value string) {
-	for _, field := range doc.Fields {
+func (entry *TextEntry) SetField(name string, value string) {
+	for _, field := range entry.Fields {
 		if field.Name == name {
 			// replace the existing values
 			field.Value = value
@@ -34,11 +34,11 @@ func (doc *TextEntry) SetField(name string, value string) {
 	}
 	// create the field
 	field := Field{Name: name, Value: value}
-	doc.Fields = append(doc.Fields, field)
+	entry.Fields = append(entry.Fields, field)
 }
 
-func (doc *TextEntry) GetField(name string) string {
-	for _, field := range doc.Fields {
+func (entry *TextEntry) GetField(name string) string {
+	for _, field := range entry.Fields {
 		if field.Name == name {
 			return field.Value
 		}
@@ -46,25 +46,25 @@ func (doc *TextEntry) GetField(name string) string {
 	return ""
 }
 
-func (doc *TextEntry) setCalculatedValues(calculateDates bool) {
-	doc.Slug = slug(doc.Title)
+func (entry *TextEntry) setCalculatedValues(calculateDates bool) {
+	entry.Slug = slug(entry.Title)
 	if calculateDates {
-		if doc.CreatedOn == "" {
-			doc.CreatedOn = now()
+		if entry.CreatedOn == "" {
+			entry.CreatedOn = now()
 		} else {
-			doc.UpdatedOn = now()
+			entry.UpdatedOn = now()
 		}
 	}
 }
 
-func (doc *TextEntry) MarkAsPosted() {
-	doc.PostedOn = now()
+func (entry *TextEntry) MarkAsPosted() {
+	entry.PostedOn = now()
 }
 
-func (doc *TextEntry) MarkAsDraft() {
-	doc.PostedOn = ""
+func (entry *TextEntry) MarkAsDraft() {
+	entry.PostedOn = ""
 }
 
-func (doc TextEntry) IsDraft() bool {
-	return doc.PostedOn == ""
+func (entry TextEntry) IsDraft() bool {
+	return entry.PostedOn == ""
 }
