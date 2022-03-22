@@ -2,18 +2,18 @@
 <div>
   <a href="/doc">Show All</a>
 </div>
-<h1>{{ $.Metadata.Title }}</h1>
+<h1>{{ $.Title }}</h1>
 <p>
   posted on: 
   {{ if $.IsDraft }}
   (draft)
   {{ else }}
-    {{ $.Metadata.PostedOn }}
+    {{ $.PostedOn }}
   {{ end }}
 </p>
 
 <div>
-  <p>{{ $.Metadata.Summary }}</p>
+  <p>{{ $.Summary }}</p>
 </div>
 
 <div>
@@ -25,7 +25,7 @@
 </form>
 
 <div>
-  <p>slug: {{ $.Metadata.Slug}}</p>
+  <p>slug: {{ $.Slug}}</p>
   <p>id: {{ $.Id }}</p>
 </div>
 {{ end }}

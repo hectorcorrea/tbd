@@ -25,18 +25,18 @@ func readContent(filename string) string {
 	return string(content)
 }
 
-func readMetadata(filename string) Metadata {
+func readMetadata(filename string) TextEntry {
 	reader, err := os.Open(filename)
 	if err != nil {
 		logError("Error reading metadata file", filename, err)
 	}
 	defer reader.Close()
 
-	// Read the bytes and unmarshall into our metadata struct
+	// Read the bytes and unmarshall into our TextEntry struct
 	byteValue, _ := ioutil.ReadAll(reader)
-	var metadata Metadata
-	xml.Unmarshal(byteValue, &metadata)
-	return metadata
+	var entry TextEntry
+	xml.Unmarshal(byteValue, &entry)
+	return entry
 }
 
 func saveContent(path string, entry TextEntry) error {
@@ -45,12 +45,13 @@ func saveContent(path string, entry TextEntry) error {
 }
 
 func saveMetadata(path string, entry TextEntry) error {
-	// Convert our Metadata struct to an XML string...
+	// Convert our TextEntry struct to an XML string...
 	xmlDeclaration := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
 	buffer := bytes.NewBufferString(xmlDeclaration)
 	encoder := xml.NewEncoder(buffer)
 	encoder.Indent("  ", "    ")
-	err := encoder.Encode(entry.Metadata)
+
+	err := encoder.Encode(entry)
 	if err != nil {
 		return err
 	}

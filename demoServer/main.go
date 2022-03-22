@@ -1,6 +1,7 @@
 package main
 
 func main() {
-	settings := InitSiteSettings("", "")
-	StartWebServer(settings)
+	address := "localhost:9001"
+	dataFolder := "./data"
+	StartWebServer(address, dataFolder)
 }
