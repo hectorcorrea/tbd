@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"regexp"
 	"strings"
 )
 
-type RouteHandler func(Session, map[string]string)
+type RouteHandler func(http.ResponseWriter, *http.Request, map[string]string)
 
 type Route struct {
 	method  string // GET or POST

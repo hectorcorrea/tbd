@@ -20,103 +20,102 @@ func init() {
 	router.Add("GET", "/doc/:slug", docOne)
 }
 
-func docAll(s Session, values map[string]string) {
+func docAll(resp http.ResponseWriter, req *http.Request, values map[string]string) {
 	vm := db.All()
-	renderTemplate(s, "views/all.html", vm)
+	renderTemplate(resp, req, "views/all.html", vm)
 }
 
-func docOne(s Session, values map[string]string) {
+func docOne(resp http.ResponseWriter, req *http.Request, values map[string]string) {
 	slug := values["slug"]
 	entry, found := db.FindBySlug(slug)
 	if !found {
 		log.Printf("Not found: %s", slug)
-		renderTemplate(s, "views/error.html", entry)
+		renderTemplate(resp, req, "views/error.html", entry)
 		return
 	}
-	renderTemplate(s, "views/one.html", entry)
+	renderTemplate(resp, req, "views/one.html", entry)
 }
 
-func docEdit(s Session, values map[string]string) {
+func docEdit(resp http.ResponseWriter, req *http.Request, values map[string]string) {
 	id := values["id"]
 	log.Printf("id: %s.", id)
 
 	entry, err := db.FindById(id)
 	if err != nil {
 		log.Printf("Not found id for edit: %s, %s", id, err)
-		renderTemplate(s, "views/error.html", entry)
+		renderTemplate(resp, req, "views/error.html", entry)
 		return
 	}
-	renderTemplate(s, "views/edit.html", entry)
+	renderTemplate(resp, req, "views/edit.html", entry)
 }
 
-func docNew(s Session, values map[string]string) {
+func docNew(resp http.ResponseWriter, req *http.Request, values map[string]string) {
 	entry, err := db.NewEntry()
 	if err != nil {
 		log.Printf("Error creating new document: %s", err)
-		http.Error(s.Resp, "Error processing request", http.StatusInternalServerError)
+		http.Error(resp, "Error processing request", http.StatusInternalServerError)
 		return
 	}
 
-	qs := s.Req.URL.Query()
+	qs := req.URL.Query()
 	if len(qs["redirect"]) > 0 {
 		url := fmt.Sprintf("/doc/%s", entry.Slug)
 		log.Printf("Created %s, redirecting to %s", entry.Id, url)
-		http.Redirect(s.Resp, s.Req, url, 301)
+		http.Redirect(resp, req, url, 301)
 		return
 	}
 
 	log.Printf("Created %s %s", entry.Id, entry.Slug)
 	payload := "{ \"slug\":\"" + entry.Slug + "\" }"
-	s.Resp.Header().Add("Content-Type", "text/json")
-	fmt.Fprint(s.Resp, payload)
+	resp.Header().Add("Content-Type", "text/json")
+	fmt.Fprint(resp, payload)
 }
 
-func docSave(s Session, values map[string]string) {
+func docSave(resp http.ResponseWriter, req *http.Request, values map[string]string) {
 	id := values["id"]
 	entry, err := db.FindById(id)
 	if err != nil {
 		log.Printf("Error fetching document to save: %s", err)
-		http.Error(s.Resp, "Error processing request", http.StatusInternalServerError)
+		http.Error(resp, "Error processing request", http.StatusInternalServerError)
 		return
 	}
 
-	entry.Title = s.Req.FormValue("title")
-	entry.Summary = s.Req.FormValue("summary")
-	entry.Content = s.Req.FormValue("content")
+	entry.Title = req.FormValue("title")
+	entry.Summary = req.FormValue("summary")
+	entry.Content = req.FormValue("content")
 
-	if s.Req.FormValue("post") == "post" {
+	if req.FormValue("post") == "post" {
 		entry.MarkAsPosted()
-	} else if s.Req.FormValue("draft") == "draft" {
+	} else if req.FormValue("draft") == "draft" {
 		entry.MarkAsDraft()
 	}
 
 	entry, err = db.UpdateEntry(entry)
 	if err != nil {
 		log.Printf("Error saving document: %s", err)
-		http.Error(s.Resp, "Error processing request", http.StatusInternalServerError)
+		http.Error(resp, "Error processing request", http.StatusInternalServerError)
 		return
 	}
 
-	qs := s.Req.URL.Query()
+	qs := req.URL.Query()
 	if len(qs["redirect"]) > 0 {
 		url := fmt.Sprintf("/doc/%s", entry.Slug)
 		log.Printf("Saved %s, redirecting to %s", entry.Id, url)
-		http.Redirect(s.Resp, s.Req, url, 301)
+		http.Redirect(resp, req, url, 301)
 		return
 	}
 
 	log.Printf("Saved %s", entry.Id)
 	payload := "{ \"slug\":\"" + entry.Slug + "\" }"
-	s.Resp.Header().Add("Content-Type", "text/json")
-	fmt.Fprint(s.Resp, payload)
+	resp.Header().Add("Content-Type", "text/json")
+	fmt.Fprint(resp, payload)
 }
 
 func dispatcher(resp http.ResponseWriter, req *http.Request) {
-	session := NewSession(resp, req)
 	found, route := router.FindRoute(req.Method, req.URL.Path)
 	if found {
 		values := route.UrlValues(req.URL.Path)
-		route.Handler(session, values)
+		route.Handler(resp, req, values)
 	} else {
 		log.Printf("not found")
 	}
@@ -133,25 +132,25 @@ func StartWebServer(address string, dataFolder string) {
 	}
 }
 
-func renderTemplate(s Session, viewName string, viewModel interface{}) {
-	t, err := loadTemplate(s, viewName)
+func renderTemplate(resp http.ResponseWriter, req *http.Request, viewName string, viewModel interface{}) {
+	t, err := loadTemplate(resp, req, viewName)
 	if err != nil {
 		log.Printf("Error loading: %s, %s ", viewName, err)
 	} else {
-		err = t.Execute(s.Resp, viewModel)
+		err = t.Execute(resp, viewModel)
 		if err != nil {
 			log.Printf("Error rendering: %s, %s ", viewName, err)
 		}
 	}
 }
 
-func loadTemplate(s Session, viewName string) (*template.Template, error) {
+func loadTemplate(resp http.ResponseWriter, req *http.Request, viewName string) (*template.Template, error) {
 	t, err := template.New("layout").ParseFiles("views/layout.html", viewName)
 	if err != nil {
-		log.Printf("Error loading template %s (%s)", viewName, s.Req.URL.Path)
+		log.Printf("Error loading template %s (%s)", viewName, req.URL.Path)
 		return nil, err
 	} else {
-		log.Printf("Loaded template %s (%s)", viewName, s.Req.URL.Path)
+		log.Printf("Loaded template %s (%s)", viewName, req.URL.Path)
 		return t, nil
 	}
 }
