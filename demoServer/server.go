@@ -60,12 +60,12 @@ func docNew(s Session, values map[string]string) {
 	qs := s.Req.URL.Query()
 	if len(qs["redirect"]) > 0 {
 		url := fmt.Sprintf("/doc/%s", entry.Slug)
-		log.Printf("Created %s, redirecting to %s", entry.Id(), url)
+		log.Printf("Created %s, redirecting to %s", entry.Id, url)
 		http.Redirect(s.Resp, s.Req, url, 301)
 		return
 	}
 
-	log.Printf("Created %s %s", entry.Id(), entry.Slug)
+	log.Printf("Created %s %s", entry.Id, entry.Slug)
 	payload := "{ \"slug\":\"" + entry.Slug + "\" }"
 	s.Resp.Header().Add("Content-Type", "text/json")
 	fmt.Fprint(s.Resp, payload)
@@ -82,7 +82,7 @@ func docSave(s Session, values map[string]string) {
 
 	entry.Title = s.Req.FormValue("title")
 	entry.Summary = s.Req.FormValue("summary")
-	entry.SetContent(s.Req.FormValue("content"))
+	entry.Content = s.Req.FormValue("content")
 
 	if s.Req.FormValue("post") == "post" {
 		entry.MarkAsPosted()
@@ -100,12 +100,12 @@ func docSave(s Session, values map[string]string) {
 	qs := s.Req.URL.Query()
 	if len(qs["redirect"]) > 0 {
 		url := fmt.Sprintf("/doc/%s", entry.Slug)
-		log.Printf("Saved %s, redirecting to %s", entry.Id(), url)
+		log.Printf("Saved %s, redirecting to %s", entry.Id, url)
 		http.Redirect(s.Resp, s.Req, url, 301)
 		return
 	}
 
-	log.Printf("Saved %s", entry.Id())
+	log.Printf("Saved %s", entry.Id)
 	payload := "{ \"slug\":\"" + entry.Slug + "\" }"
 	s.Resp.Header().Add("Content-Type", "text/json")
 	fmt.Fprint(s.Resp, payload)

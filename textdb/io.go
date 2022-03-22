@@ -41,7 +41,7 @@ func readMetadata(filename string) TextEntry {
 
 func saveContent(path string, entry TextEntry) error {
 	filename := filepath.Join(path, "content.md")
-	return ioutil.WriteFile(filename, []byte(entry.Content()), 0644)
+	return ioutil.WriteFile(filename, []byte(entry.Content), 0644)
 }
 
 func saveMetadata(path string, entry TextEntry) error {

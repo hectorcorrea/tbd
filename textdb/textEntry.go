@@ -1,47 +1,52 @@
 package textdb
 
-type TextTag struct {
-	Name   string `xml:"name"`
-	Values string `xml:"value"`
+// TextEntry represents the information from database entry.
+// It includes the information stored in the metadata file
+// plus the informtion stored in the content file.
+type TextEntry struct {
+	Id        string  `xml:"-"` // not stored
+	Title     string  `xml:"title"`
+	Slug      string  `xml:"slug"`
+	Summary   string  `xml:"summary"`
+	Content   string  `xml:"-"` // stored in separate doc
+	CreatedOn string  `xml:"createdOn"`
+	UpdatedOn string  `xml:"updatedOn"`
+	PostedOn  string  `xml:"postedOn"`
+	Fields    []Field `xml:"fields"` // client managed fields
 }
 
-// id is not public because we don't want the clients to
-// mess with it.
-//
-// content is not public because we want to serialize it
-// to a different document.
-type TextEntry struct {
-	id        string
-	Title     string `xml:"title"`
-	Slug      string `xml:"slug"`
-	Summary   string `xml:"summary"`
-	content   string
-	CreatedOn string    `xml:"createdOn"`
-	UpdatedOn string    `xml:"updatedOn"`
-	PostedOn  string    `xml:"postedOn"`
-	Tags      []TextTag `xml:"tags"`
+type Field struct {
+	Name  string `xml:"name"`
+	Value string `xml:"value"`
 }
 
 func NewTextEntry(id string) TextEntry {
-	return TextEntry{id: id}
+	return TextEntry{Id: id}
 }
 
-func (doc TextEntry) Id() string {
-	return doc.id
+func (doc *TextEntry) SetField(name string, value string) {
+	for _, field := range doc.Fields {
+		if field.Name == name {
+			// replace the existing values
+			field.Value = value
+			return
+		}
+	}
+	// create the field
+	field := Field{Name: name, Value: value}
+	doc.Fields = append(doc.Fields, field)
 }
 
-func (doc *TextEntry) SetId(id string) {
-	doc.id = id
-}
-func (doc TextEntry) Content() string {
-	return doc.content
-}
-
-func (doc *TextEntry) SetContent(content string) {
-	doc.content = content
+func (doc *TextEntry) GetField(name string) string {
+	for _, field := range doc.Fields {
+		if field.Name == name {
+			return field.Value
+		}
+	}
+	return ""
 }
 
-func (doc *TextEntry) Save() {
+func (doc *TextEntry) setCalculatedValues() {
 	doc.Slug = slug(doc.Title)
 	if doc.CreatedOn == "" {
 		doc.CreatedOn = now()
