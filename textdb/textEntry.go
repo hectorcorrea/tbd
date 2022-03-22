@@ -46,12 +46,14 @@ func (doc *TextEntry) GetField(name string) string {
 	return ""
 }
 
-func (doc *TextEntry) setCalculatedValues() {
+func (doc *TextEntry) setCalculatedValues(calculateDates bool) {
 	doc.Slug = slug(doc.Title)
-	if doc.CreatedOn == "" {
-		doc.CreatedOn = now()
-	} else {
-		doc.UpdatedOn = now()
+	if calculateDates {
+		if doc.CreatedOn == "" {
+			doc.CreatedOn = now()
+		} else {
+			doc.UpdatedOn = now()
+		}
 	}
 }
 

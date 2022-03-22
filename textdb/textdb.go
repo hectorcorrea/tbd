@@ -41,7 +41,7 @@ func (db *TextDb) NewEntry() (TextEntry, error) {
 	id := db.getNextId()
 	entry := NewTextEntry(id)
 	entry.Title = "new " + id
-	return db.saveEntry(entry)
+	return db.saveEntry(entry, true)
 }
 
 // NewEntryFor creates a new record for a specific date and time.
@@ -54,15 +54,21 @@ func (db *TextDb) NewEntryFor(date string, time string) (TextEntry, error) {
 	entry := NewTextEntry(id)
 	entry.Title = "new " + id
 	entry.CreatedOn = date + " " + time
-	return db.saveEntry(entry)
+	return db.saveEntry(entry, true)
 }
 
 // Saves an existing entry
 func (db *TextDb) UpdateEntry(entry TextEntry) (TextEntry, error) {
-	return db.saveEntry(entry)
+	return db.saveEntry(entry, true)
 }
 
-func (db *TextDb) saveEntry(entry TextEntry) (TextEntry, error) {
+// Saves an existing entry but honors the createdOn and updatedOn
+// values already on the entry rather than re-calculating them.
+func (db *TextDb) UpdateEntryHonorDates(entry TextEntry) (TextEntry, error) {
+	return db.saveEntry(entry, false)
+}
+
+func (db *TextDb) saveEntry(entry TextEntry, calculateDates bool) (TextEntry, error) {
 	// Always set the slug before saving and make sure the Id
 	// still is valid.
 	err := validId(entry.Id)
@@ -70,7 +76,7 @@ func (db *TextDb) saveEntry(entry TextEntry) (TextEntry, error) {
 		return entry, err
 	}
 
-	entry.setCalculatedValues()
+	entry.setCalculatedValues(calculateDates)
 
 	// Create the directory for it if it does not exist
 	path := db.entryPath(entry)
