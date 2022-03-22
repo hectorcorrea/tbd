@@ -1,5 +1,10 @@
 package textdb
 
+type TextTag struct {
+	Name   string `xml:"name"`
+	Values string `xml:"value"`
+}
+
 // id is not public because we don't want the clients to
 // mess with it.
 //
@@ -11,9 +16,10 @@ type TextEntry struct {
 	Slug      string `xml:"slug"`
 	Summary   string `xml:"summary"`
 	content   string
-	CreatedOn string `xml:"createdOn"`
-	UpdatedOn string `xml:"updatedOn"`
-	PostedOn  string `xml:"postedOn"`
+	CreatedOn string    `xml:"createdOn"`
+	UpdatedOn string    `xml:"updatedOn"`
+	PostedOn  string    `xml:"postedOn"`
+	Tags      []TextTag `xml:"tags"`
 }
 
 func NewTextEntry(id string) TextEntry {
