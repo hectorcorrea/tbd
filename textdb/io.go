@@ -32,27 +32,26 @@ func readMetadata(filename string) TextEntry {
 	}
 	defer reader.Close()
 
-	// Read the bytes and unmarshall into our metadata struct
+	// Read the bytes and unmarshall into our TextEntry struct
 	byteValue, _ := ioutil.ReadAll(reader)
-	var metadata TextEntryDisk
-	xml.Unmarshal(byteValue, &metadata)
-	return NewTextEntryFromDisk("", metadata)
+	var entry TextEntry
+	xml.Unmarshal(byteValue, &entry)
+	return entry
 }
 
 func saveContent(path string, entry TextEntry) error {
 	filename := filepath.Join(path, "content.md")
-	return ioutil.WriteFile(filename, []byte(entry.Content), 0644)
+	return ioutil.WriteFile(filename, []byte(entry.Content()), 0644)
 }
 
 func saveMetadata(path string, entry TextEntry) error {
-	// Convert our Metadata struct to an XML string...
+	// Convert our TextEntry struct to an XML string...
 	xmlDeclaration := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
 	buffer := bytes.NewBufferString(xmlDeclaration)
 	encoder := xml.NewEncoder(buffer)
 	encoder.Indent("  ", "    ")
 
-	disk := entry.ToTextEntryDisk()
-	err := encoder.Encode(disk)
+	err := encoder.Encode(entry)
 	if err != nil {
 		return err
 	}

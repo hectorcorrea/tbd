@@ -41,7 +41,7 @@ func (db *TextDb) NewEntry() (TextEntry, error) {
 	id := db.getNextId()
 	entry := NewTextEntry(id)
 	entry.Title = "new " + id
-	entry.Content = "(content goes here)"
+	entry.SetContent("(content goes here)")
 	return db.saveEntry(entry)
 }
 
@@ -54,7 +54,7 @@ func (db *TextDb) NewEntryFor(date string, time string) (TextEntry, error) {
 	id := db.getNextIdFor(date)
 	entry := NewTextEntry(id)
 	entry.Title = "new " + id
-	entry.Content = "(content goes here)"
+	entry.SetContent("(content goes here)")
 	entry.CreatedOn = date + " " + time
 	return db.saveEntry(entry)
 }
@@ -67,7 +67,7 @@ func (db *TextDb) UpdateEntry(entry TextEntry) (TextEntry, error) {
 func (db *TextDb) saveEntry(entry TextEntry) (TextEntry, error) {
 	// Always set the slug before saving and make sure the Id
 	// still is valid.
-	err := validId(entry.Id)
+	err := validId(entry.Id())
 	if err != nil {
 		return entry, err
 	}
@@ -139,14 +139,14 @@ func (db *TextDb) readEntry(id string) (TextEntry, error) {
 	}
 
 	entry := readMetadata(filepath.Join(path, "metadata.xml"))
-	entry.Id = idFromPath(path)
-	entry.Content = readContent(filepath.Join(path, "content.md"))
+	entry.SetId(idFromPath(path))
+	entry.SetContent(readContent(filepath.Join(path, "content.md")))
 	return entry, nil
 }
 
 // Returns the full path to an entry
 func (db *TextDb) entryPath(entry TextEntry) string {
-	return filepath.Join(db.RootDir, entry.Id)
+	return filepath.Join(db.RootDir, entry.Id())
 }
 
 // Returns the Id from a path (i.e. the last segment of the path)
