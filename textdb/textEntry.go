@@ -25,10 +25,10 @@ func NewTextEntry(id string) TextEntry {
 }
 
 func (entry *TextEntry) SetField(name string, value string) {
-	for _, field := range entry.Fields {
+	for i, field := range entry.Fields {
 		if field.Name == name {
 			// replace the existing values
-			field.Value = value
+			entry.Fields[i].Value = value
 			return
 		}
 	}
