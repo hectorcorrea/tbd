@@ -13,11 +13,13 @@ There is support to add custom single value string fields to each record.
 
 ## Source code
 
-* Package `textdb` is the core functionality 
-* Package`demoServer` is a tiny website showing how to use it from a Go client.
+* Package `textdb` is the core functionality.
+
+* Package`demoServer` is a tiny website showing how to use it from a Go client. File `server.go` shows the functionality to create, display, and update records from inside  a Go website.
 
 
 ## Examples
+Below are a few code snippets showing the basic functionality create, fetch, and update records.
 
 ```
 import "github.com/hectorcorrea/texto/textdb"
@@ -59,7 +61,10 @@ log.Printf("Id=%s, Title=%s, Author=%s\r\n", entry.Id, entry.Title, entry.GetFie
 ```
 
 ## textdb
+(more stuff goes here)
+
 ## demoServer
+(more stuff goes here)
 
 ## Notes
 Will this scale? Probably no.
