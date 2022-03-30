@@ -6,11 +6,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/hectorcorrea/texto/textdb"
+	"github.com/hectorcorrea/textodb"
 )
 
 var router Router
-var db textdb.TextDb
+var db textodb.TextoDb
 
 func init() {
 	router.Add("POST", "/doc/:id/edit", docEdit)
@@ -18,6 +18,17 @@ func init() {
 	router.Add("POST", "/doc/new", docNew)
 	router.Add("GET", "/doc", docAll)
 	router.Add("GET", "/doc/:slug", docOne)
+}
+
+func StartWebServer(address string, dataFolder string) {
+	log.Printf("Listening for requests at %s\n", "http://"+address)
+	db = textodb.InitTextDb(dataFolder)
+	http.HandleFunc("/doc/", dispatcher)
+
+	err := http.ListenAndServe(address, nil)
+	if err != nil {
+		log.Fatal("Failed to start the web server: ", err)
+	}
 }
 
 func docAll(resp http.ResponseWriter, req *http.Request, values map[string]string) {
@@ -118,17 +129,6 @@ func dispatcher(resp http.ResponseWriter, req *http.Request) {
 		route.Handler(resp, req, values)
 	} else {
 		log.Printf("not found")
-	}
-}
-
-func StartWebServer(address string, dataFolder string) {
-	log.Printf("Listening for requests at %s\n", "http://"+address)
-	db = textdb.InitTextDb(dataFolder)
-	http.HandleFunc("/doc/", dispatcher)
-
-	err := http.ListenAndServe(address, nil)
-	if err != nil {
-		log.Fatal("Failed to start the web server: ", err)
 	}
 }
 

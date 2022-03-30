@@ -1,4 +1,4 @@
-package textdb
+package textodb
 
 import (
 	"bytes"
@@ -25,27 +25,27 @@ func readContent(filename string) string {
 	return string(content)
 }
 
-func readMetadata(filename string) TextEntry {
+func readMetadata(filename string) TextoEntry {
 	reader, err := os.Open(filename)
 	if err != nil {
 		logError("Error reading metadata file", filename, err)
 	}
 	defer reader.Close()
 
-	// Read the bytes and unmarshall into our TextEntry struct
+	// Read the bytes and unmarshall into our TextoEntry struct
 	byteValue, _ := ioutil.ReadAll(reader)
-	var entry TextEntry
+	var entry TextoEntry
 	xml.Unmarshal(byteValue, &entry)
 	return entry
 }
 
-func saveContent(path string, entry TextEntry) error {
+func saveContent(path string, entry TextoEntry) error {
 	filename := filepath.Join(path, "content.md")
 	return ioutil.WriteFile(filename, []byte(entry.Content), 0644)
 }
 
-func saveMetadata(path string, entry TextEntry) error {
-	// Convert our TextEntry struct to an XML string...
+func saveMetadata(path string, entry TextoEntry) error {
+	// Convert our TextoEntry struct to an XML string...
 	xmlDeclaration := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
 	buffer := bytes.NewBufferString(xmlDeclaration)
 	encoder := xml.NewEncoder(buffer)
