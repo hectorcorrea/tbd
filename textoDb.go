@@ -1,4 +1,4 @@
-package textdb
+package textodb
 
 import (
 	"errors"
@@ -8,11 +8,11 @@ import (
 	"strings"
 )
 
-type TextDb struct {
+type TextoDb struct {
 	RootDir string
 }
 
-func InitTextDb(rootDir string) TextDb {
+func InitTextDb(rootDir string) TextoDb {
 	rootDir, err := filepath.Abs(rootDir)
 	if err != nil {
 		log.Fatal(err)
@@ -32,14 +32,14 @@ func InitTextDb(rootDir string) TextDb {
 	}
 
 	defer file.Close()
-	return TextDb{RootDir: rootDir}
+	return TextoDb{RootDir: rootDir}
 }
 
 // NewEntry creates a new record and initializes it.
 // Uses today's date for the basis of the Id.
-func (db *TextDb) NewEntry() (TextEntry, error) {
+func (db *TextoDb) NewEntry() (TextoEntry, error) {
 	id := db.getNextId()
-	entry := NewTextEntry(id)
+	entry := NewTextoEntry(id)
 	entry.Title = "new " + id
 	return db.saveEntry(entry, true)
 }
@@ -49,26 +49,26 @@ func (db *TextDb) NewEntry() (TextEntry, error) {
 // of the Id and sets the CreatedOn appropriately.
 // Date is expected to be in the form yyyy-mm-dd
 // Time is expected to be in the form HH:mm:ss.xxx
-func (db *TextDb) NewEntryFor(date string, time string) (TextEntry, error) {
+func (db *TextoDb) NewEntryFor(date string, time string) (TextoEntry, error) {
 	id := db.getNextIdFor(date)
-	entry := NewTextEntry(id)
+	entry := NewTextoEntry(id)
 	entry.Title = "new " + id
 	entry.CreatedOn = date + " " + time
 	return db.saveEntry(entry, true)
 }
 
 // Saves an existing entry
-func (db *TextDb) UpdateEntry(entry TextEntry) (TextEntry, error) {
+func (db *TextoDb) UpdateEntry(entry TextoEntry) (TextoEntry, error) {
 	return db.saveEntry(entry, true)
 }
 
 // Saves an existing entry but honors the createdOn and updatedOn
 // values already on the entry rather than re-calculating them.
-func (db *TextDb) UpdateEntryHonorDates(entry TextEntry) (TextEntry, error) {
+func (db *TextoDb) UpdateEntryHonorDates(entry TextoEntry) (TextoEntry, error) {
 	return db.saveEntry(entry, false)
 }
 
-func (db *TextDb) saveEntry(entry TextEntry, calculateDates bool) (TextEntry, error) {
+func (db *TextoDb) saveEntry(entry TextoEntry, calculateDates bool) (TextoEntry, error) {
 	err := validId(entry.Id)
 	if err != nil {
 		return entry, err
@@ -93,8 +93,8 @@ func (db *TextDb) saveEntry(entry TextEntry, calculateDates bool) (TextEntry, er
 	return entry, err
 }
 
-func (db *TextDb) All() []TextEntry {
-	entries := []TextEntry{}
+func (db *TextoDb) All() []TextoEntry {
+	entries := []TextoEntry{}
 	err := filepath.Walk(db.RootDir, func(path string, info os.FileInfo, err error) error {
 		if path == db.RootDir {
 			return nil
@@ -117,39 +117,39 @@ func (db *TextDb) All() []TextEntry {
 }
 
 // Finds an entry by Id
-func (db *TextDb) FindById(id string) (TextEntry, error) {
+func (db *TextoDb) FindById(id string) (TextoEntry, error) {
 	err := validId(id)
 	if err != nil {
-		return TextEntry{}, err
+		return TextoEntry{}, err
 	}
 	return db.readEntry(id)
 }
 
 // Finds an entry by Slug
-func (db *TextDb) FindBySlug(slug string) (TextEntry, bool) {
+func (db *TextoDb) FindBySlug(slug string) (TextoEntry, bool) {
 	for _, entry := range db.All() {
 		if entry.Slug == slug {
 			return entry, true
 		}
 	}
-	return TextEntry{}, false
+	return TextoEntry{}, false
 }
 
 // Finds an entry by a user defined field/value
-func (db *TextDb) FindBy(field string, value string) (TextEntry, bool) {
+func (db *TextoDb) FindBy(field string, value string) (TextoEntry, bool) {
 	for _, entry := range db.All() {
 		if entry.GetField(field) == value {
 			return entry, true
 		}
 	}
-	return TextEntry{}, false
+	return TextoEntry{}, false
 }
 
-func (db *TextDb) readEntry(id string) (TextEntry, error) {
+func (db *TextoDb) readEntry(id string) (TextoEntry, error) {
 	path := filepath.Join(db.RootDir, id)
 	if !dirExist(path) {
 		logError("ReadEntry did not find path", path, nil)
-		return TextEntry{}, errors.New("Path not found")
+		return TextoEntry{}, errors.New("Path not found")
 	}
 
 	entry := readMetadata(filepath.Join(path, "metadata.xml"))
@@ -159,7 +159,7 @@ func (db *TextDb) readEntry(id string) (TextEntry, error) {
 }
 
 // Returns the full path to an entry
-func (db *TextDb) entryPath(entry TextEntry) string {
+func (db *TextoDb) entryPath(entry TextoEntry) string {
 	return filepath.Join(db.RootDir, entry.Id)
 }
 

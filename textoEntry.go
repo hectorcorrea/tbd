@@ -1,9 +1,9 @@
-package textdb
+package textodb
 
-// TextEntry represents the information from database entry.
+// TextoEntry represents the information from database entry.
 // It includes the information stored in the metadata file
 // plus the informtion stored in the content file.
-type TextEntry struct {
+type TextoEntry struct {
 	Id        string  `xml:"-"` // not stored
 	Title     string  `xml:"title"`
 	Slug      string  `xml:"slug"`
@@ -20,11 +20,11 @@ type Field struct {
 	Value string `xml:"value"`
 }
 
-func NewTextEntry(id string) TextEntry {
-	return TextEntry{Id: id}
+func NewTextoEntry(id string) TextoEntry {
+	return TextoEntry{Id: id}
 }
 
-func (entry *TextEntry) SetField(name string, value string) {
+func (entry *TextoEntry) SetField(name string, value string) {
 	for i, field := range entry.Fields {
 		if field.Name == name {
 			// replace the existing values
@@ -37,7 +37,7 @@ func (entry *TextEntry) SetField(name string, value string) {
 	entry.Fields = append(entry.Fields, field)
 }
 
-func (entry *TextEntry) GetField(name string) string {
+func (entry *TextoEntry) GetField(name string) string {
 	for _, field := range entry.Fields {
 		if field.Name == name {
 			return field.Value
@@ -46,7 +46,7 @@ func (entry *TextEntry) GetField(name string) string {
 	return ""
 }
 
-func (entry *TextEntry) setCalculatedValues(calculateDates bool) {
+func (entry *TextoEntry) setCalculatedValues(calculateDates bool) {
 	entry.Slug = slug(entry.Title)
 	if calculateDates {
 		if entry.CreatedOn == "" {
@@ -57,14 +57,14 @@ func (entry *TextEntry) setCalculatedValues(calculateDates bool) {
 	}
 }
 
-func (entry *TextEntry) MarkAsPosted() {
+func (entry *TextoEntry) MarkAsPosted() {
 	entry.PostedOn = now()
 }
 
-func (entry *TextEntry) MarkAsDraft() {
+func (entry *TextoEntry) MarkAsDraft() {
 	entry.PostedOn = ""
 }
 
-func (entry TextEntry) IsDraft() bool {
+func (entry TextoEntry) IsDraft() bool {
 	return entry.PostedOn == ""
 }
