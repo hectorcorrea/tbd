@@ -13,11 +13,11 @@ var router Router
 var db textodb.TextoDb
 
 func init() {
-	router.Add("POST", "/:id/edit", docEdit)
-	router.Add("POST", "/:id/save", docSave)
-	router.Add("POST", "/new", docNew)
-	router.Add("GET", "/", docAll)
-	router.Add("GET", "/:slug", docOne)
+	router.Add("POST", "/:id/edit", edit)
+	router.Add("POST", "/:id/save", save)
+	router.Add("POST", "/new", new)
+	router.Add("GET", "/", viewAll)
+	router.Add("GET", "/:slug/:id", viewOne)
 }
 
 func StartWebServer(address string, dataFolder string) {
@@ -31,36 +31,34 @@ func StartWebServer(address string, dataFolder string) {
 	}
 }
 
-func docAll(resp http.ResponseWriter, req *http.Request, values map[string]string) {
+func viewAll(resp http.ResponseWriter, req *http.Request, values map[string]string) {
 	vm := db.All()
 	renderTemplate(resp, req, "views/all.html", vm)
 }
 
-func docOne(resp http.ResponseWriter, req *http.Request, values map[string]string) {
-	slug := values["slug"]
-	entry, found := db.FindBySlug(slug)
-	if !found {
-		log.Printf("Not found: %s", slug)
+func viewOne(resp http.ResponseWriter, req *http.Request, values map[string]string) {
+	id := values["id"]
+	entry, err := db.FindById(id)
+	if err != nil {
+		log.Printf("Not found: %s. Error: %s", id, err)
 		renderTemplate(resp, req, "views/error.html", entry)
 		return
 	}
 	renderTemplate(resp, req, "views/one.html", entry)
 }
 
-func docEdit(resp http.ResponseWriter, req *http.Request, values map[string]string) {
+func edit(resp http.ResponseWriter, req *http.Request, values map[string]string) {
 	id := values["id"]
-	log.Printf("id: %s.", id)
-
 	entry, err := db.FindById(id)
 	if err != nil {
-		log.Printf("Not found id for edit: %s, %s", id, err)
+		log.Printf("Not found: %s. Error: %s", id, err)
 		renderTemplate(resp, req, "views/error.html", entry)
 		return
 	}
 	renderTemplate(resp, req, "views/edit.html", entry)
 }
 
-func docNew(resp http.ResponseWriter, req *http.Request, values map[string]string) {
+func new(resp http.ResponseWriter, req *http.Request, values map[string]string) {
 	entry, err := db.NewEntry()
 	if err != nil {
 		log.Printf("Error creating new document: %s", err)
@@ -70,19 +68,19 @@ func docNew(resp http.ResponseWriter, req *http.Request, values map[string]strin
 
 	qs := req.URL.Query()
 	if len(qs["redirect"]) > 0 {
-		url := fmt.Sprintf("/%s", entry.Slug)
+		url := fmt.Sprintf("/%s/%s", entry.Slug, entry.Id)
 		log.Printf("Created %s, redirecting to %s", entry.Id, url)
 		http.Redirect(resp, req, url, 301)
 		return
 	}
 
 	log.Printf("Created %s %s", entry.Id, entry.Slug)
-	payload := "{ \"slug\":\"" + entry.Slug + "\" }"
+	payload := fmt.Sprintf(`{ "id": "%s", "slug": "%s"}`, entry.Id, entry.Slug)
 	resp.Header().Add("Content-Type", "text/json")
 	fmt.Fprint(resp, payload)
 }
 
-func docSave(resp http.ResponseWriter, req *http.Request, values map[string]string) {
+func save(resp http.ResponseWriter, req *http.Request, values map[string]string) {
 	id := values["id"]
 	entry, err := db.FindById(id)
 	if err != nil {
@@ -110,14 +108,14 @@ func docSave(resp http.ResponseWriter, req *http.Request, values map[string]stri
 
 	qs := req.URL.Query()
 	if len(qs["redirect"]) > 0 {
-		url := fmt.Sprintf("/%s", entry.Slug)
+		url := fmt.Sprintf("/%s/%s", entry.Slug, entry.Id)
 		log.Printf("Saved %s, redirecting to %s", entry.Id, url)
 		http.Redirect(resp, req, url, 301)
 		return
 	}
 
 	log.Printf("Saved %s", entry.Id)
-	payload := "{ \"slug\":\"" + entry.Slug + "\" }"
+	payload := fmt.Sprintf(`{ "id": "%s", "slug": "%s"}`, entry.Id, entry.Slug)
 	resp.Header().Add("Content-Type", "text/json")
 	fmt.Fprint(resp, payload)
 }

@@ -1,6 +1,6 @@
 {{ define "content" }}
 
-<h1>Documents</h1>
+<h1>All Documents</h1>
 
 <form action="/new?redirect" method="post">
   <button>Add Document</button>
@@ -9,7 +9,7 @@
 <div class="row">
   <ul>
     {{ range $key, $doc := . }}
-      <li><a href="/{{ $doc.Slug }}">{{ $doc.Title }}</a>
+      <li><a href="/{{ $doc.Slug }}/{{ $doc.Id }}">{{ $doc.Title }}</a>
       {{ if $doc.IsDraft }}
         (draft)
       {{ end }}
