@@ -13,17 +13,17 @@ var router Router
 var db textodb.TextoDb
 
 func init() {
-	router.Add("POST", "/doc/:id/edit", docEdit)
-	router.Add("POST", "/doc/:id/save", docSave)
-	router.Add("POST", "/doc/new", docNew)
-	router.Add("GET", "/doc", docAll)
-	router.Add("GET", "/doc/:slug", docOne)
+	router.Add("POST", "/:id/edit", docEdit)
+	router.Add("POST", "/:id/save", docSave)
+	router.Add("POST", "/new", docNew)
+	router.Add("GET", "/", docAll)
+	router.Add("GET", "/:slug", docOne)
 }
 
 func StartWebServer(address string, dataFolder string) {
 	log.Printf("Listening for requests at %s\n", "http://"+address)
 	db = textodb.InitTextoDb(dataFolder)
-	http.HandleFunc("/doc/", dispatcher)
+	http.HandleFunc("/", router.Dispatcher)
 
 	err := http.ListenAndServe(address, nil)
 	if err != nil {
@@ -70,7 +70,7 @@ func docNew(resp http.ResponseWriter, req *http.Request, values map[string]strin
 
 	qs := req.URL.Query()
 	if len(qs["redirect"]) > 0 {
-		url := fmt.Sprintf("/doc/%s", entry.Slug)
+		url := fmt.Sprintf("/%s", entry.Slug)
 		log.Printf("Created %s, redirecting to %s", entry.Id, url)
 		http.Redirect(resp, req, url, 301)
 		return
@@ -110,7 +110,7 @@ func docSave(resp http.ResponseWriter, req *http.Request, values map[string]stri
 
 	qs := req.URL.Query()
 	if len(qs["redirect"]) > 0 {
-		url := fmt.Sprintf("/doc/%s", entry.Slug)
+		url := fmt.Sprintf("/%s", entry.Slug)
 		log.Printf("Saved %s, redirecting to %s", entry.Id, url)
 		http.Redirect(resp, req, url, 301)
 		return
@@ -120,16 +120,6 @@ func docSave(resp http.ResponseWriter, req *http.Request, values map[string]stri
 	payload := "{ \"slug\":\"" + entry.Slug + "\" }"
 	resp.Header().Add("Content-Type", "text/json")
 	fmt.Fprint(resp, payload)
-}
-
-func dispatcher(resp http.ResponseWriter, req *http.Request) {
-	found, route := router.FindRoute(req.Method, req.URL.Path)
-	if found {
-		values := route.UrlValues(req.URL.Path)
-		route.Handler(resp, req, values)
-	} else {
-		log.Printf("not found")
-	}
 }
 
 func renderTemplate(resp http.ResponseWriter, req *http.Request, viewName string, viewModel interface{}) {

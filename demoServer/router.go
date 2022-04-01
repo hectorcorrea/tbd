@@ -36,6 +36,16 @@ func (r Router) FindRoute(method, url string) (bool, Route) {
 	return false, Route{}
 }
 
+func (r *Router) Dispatcher(resp http.ResponseWriter, req *http.Request) {
+	found, route := router.FindRoute(req.Method, req.URL.Path)
+	if found {
+		values := route.UrlValues(req.URL.Path)
+		route.Handler(resp, req, values)
+	} else {
+		log.Printf("Route not found: %s", req.URL.Path)
+	}
+}
+
 // Path should be in the form /xxx/:title/:id
 // Values preceded by a colon (e.g. :id) are considered
 // named tokens.

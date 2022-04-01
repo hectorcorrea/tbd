@@ -1,7 +1,7 @@
 {{ define "content" }}
 <h1>{{ $.Title }}</h1>
 
-<form action="/doc/{{ $.Id }}/save?redirect" method="POST">
+<form action="/{{ $.Id }}/save?redirect" method="POST">
   <div>
     <label for="title">Title:</label>
     <input type="text" id="title" name="title" value="{{ .Title }}">

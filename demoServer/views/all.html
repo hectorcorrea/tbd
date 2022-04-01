@@ -2,14 +2,14 @@
 
 <h1>Documents</h1>
 
-<form action="/doc/new?redirect" method="post">
+<form action="/new?redirect" method="post">
   <button>Add Document</button>
 </form>
 
 <div class="row">
   <ul>
     {{ range $key, $doc := . }}
-      <li><a href="/doc/{{ $doc.Slug }}">{{ $doc.Title }}</a>
+      <li><a href="/{{ $doc.Slug }}">{{ $doc.Title }}</a>
       {{ if $doc.IsDraft }}
         (draft)
       {{ end }}

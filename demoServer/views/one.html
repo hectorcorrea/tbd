@@ -1,10 +1,10 @@
 {{ define "content" }}
 <div>
-  <a href="/doc">Show All</a>
+  <a href="/">Show All</a>
 </div>
 <h1>{{ $.Title }}</h1>
 <p>
-  posted on: 
+  posted on:
   {{ if $.IsDraft }}
   (draft)
   {{ else }}
@@ -20,7 +20,7 @@
   <p>Content: {{ $.Content }}</p>
 </div>
 
-<form action="/doc/{{ $.Id }}/edit" method="post">
+<form action="/{{ $.Id }}/edit" method="post">
   <button>Edit Document</button>
 </form>
 
