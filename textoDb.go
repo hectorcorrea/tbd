@@ -1,3 +1,5 @@
+// Package textodb implements functionality to read and store data into
+// a very simple database stored in disk as text files.
 package textodb
 
 import (
@@ -8,11 +10,13 @@ import (
 	"strings"
 )
 
+// TextoDb is the main object to access the database functionality.
 type TextoDb struct {
 	RootDir string
 }
 
-func InitTextDb(rootDir string) TextoDb {
+// InitTextoDb initializes a new TextoDb object.
+func InitTextoDb(rootDir string) TextoDb {
 	rootDir, err := filepath.Abs(rootDir)
 	if err != nil {
 		log.Fatal(err)
@@ -36,7 +40,8 @@ func InitTextDb(rootDir string) TextoDb {
 }
 
 // NewEntry creates a new record and initializes it.
-// Uses today's date for the basis of the Id.
+// Uses today's date for the basis of the Id, the Id will be
+// in the form yyyy-mm-dd-00000, e.g. "2022-03-25-00001"
 func (db *TextoDb) NewEntry() (TextoEntry, error) {
 	id := db.getNextId()
 	entry := NewTextoEntry(id)
@@ -47,8 +52,12 @@ func (db *TextoDb) NewEntry() (TextoEntry, error) {
 // NewEntryFor creates a new record for a specific date and time.
 // This is useful when importing existing data as it uses the given date for the basis
 // of the Id and sets the CreatedOn appropriately.
+//
 // Date is expected to be in the form yyyy-mm-dd
 // Time is expected to be in the form HH:mm:ss.xxx
+//
+// As with NewEntry() the Id will be in the form yyyy-mm-dd-00000
+// but using the date provided.
 func (db *TextoDb) NewEntryFor(date string, time string) (TextoEntry, error) {
 	id := db.getNextIdFor(date)
 	entry := NewTextoEntry(id)
@@ -64,35 +73,12 @@ func (db *TextoDb) UpdateEntry(entry TextoEntry) (TextoEntry, error) {
 
 // Saves an existing entry but honors the createdOn and updatedOn
 // values already on the entry rather than re-calculating them.
+// This is useful when importing existing data.
 func (db *TextoDb) UpdateEntryHonorDates(entry TextoEntry) (TextoEntry, error) {
 	return db.saveEntry(entry, false)
 }
 
-func (db *TextoDb) saveEntry(entry TextoEntry, calculateDates bool) (TextoEntry, error) {
-	err := validId(entry.Id)
-	if err != nil {
-		return entry, err
-	}
-
-	entry.setCalculatedValues(calculateDates)
-
-	// Create the directory for it if it does not exist
-	path := db.entryPath(entry)
-	if !dirExist(path) {
-		logInfo("Creating path", path)
-		if err := os.MkdirAll(path, os.ModePerm); err != nil {
-			logError("Error creating path", path, err)
-			return entry, err
-		}
-	}
-	// Save metadata + content
-	err = saveMetadata(path, entry)
-	if err == nil {
-		err = saveContent(path, entry)
-	}
-	return entry, err
-}
-
+// Returns all the entries in the database.
 func (db *TextoDb) All() []TextoEntry {
 	entries := []TextoEntry{}
 	err := filepath.Walk(db.RootDir, func(path string, info os.FileInfo, err error) error {
@@ -110,7 +96,7 @@ func (db *TextoDb) All() []TextoEntry {
 	})
 
 	if err != nil {
-		logError("ListAll error walking file system", "", err)
+		logError("Error walking file system", "", err)
 	}
 
 	return entries
@@ -120,6 +106,10 @@ func (db *TextoDb) All() []TextoEntry {
 func (db *TextoDb) FindById(id string) (TextoEntry, error) {
 	err := validId(id)
 	if err != nil {
+		// Return the error (rather than false) because if someone is
+		// passing an Id they probably expect the record to be found
+		// and knowing why it was not found would probably be useful
+		// to them.
 		return TextoEntry{}, err
 	}
 	return db.readEntry(id)
@@ -167,4 +157,29 @@ func (db *TextoDb) entryPath(entry TextoEntry) string {
 func idFromPath(path string) string {
 	pathTokens := strings.Split(path, string(os.PathSeparator))
 	return pathTokens[len(pathTokens)-1]
+}
+
+func (db *TextoDb) saveEntry(entry TextoEntry, calculateDates bool) (TextoEntry, error) {
+	err := validId(entry.Id)
+	if err != nil {
+		return entry, err
+	}
+
+	entry.setCalculatedValues(calculateDates)
+
+	// Create the directory for it if it does not exist
+	path := db.entryPath(entry)
+	if !dirExist(path) {
+		logInfo("Creating path", path)
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
+			logError("Error creating path", path, err)
+			return entry, err
+		}
+	}
+	// Save metadata + content
+	err = saveMetadata(path, entry)
+	if err == nil {
+		err = saveContent(path, entry)
+	}
+	return entry, err
 }

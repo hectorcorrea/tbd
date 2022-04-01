@@ -9,11 +9,11 @@ import (
 )
 
 func logInfo(message string, parameter string) {
-	log.Printf("textdb: %s %s", message, parameter)
+	log.Printf("textodb: %s %s", message, parameter)
 }
 
 func logError(message string, parameter string, err error) {
-	log.Printf("textdb: %s %s. ERROR: %s", message, parameter, err)
+	log.Printf("textodb: %s %s. ERROR: %s", message, parameter, err)
 }
 
 func now() string {

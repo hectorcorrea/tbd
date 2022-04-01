@@ -15,15 +15,18 @@ type TextoEntry struct {
 	Fields    []Field `xml:"fields"` // client managed fields
 }
 
+// Field represents a custom field in an entry.
 type Field struct {
 	Name  string `xml:"name"`
 	Value string `xml:"value"`
 }
 
+// NewTextoEntry initializes an entry object.
 func NewTextoEntry(id string) TextoEntry {
 	return TextoEntry{Id: id}
 }
 
+// Sets the value for a custom field in an entry.
 func (entry *TextoEntry) SetField(name string, value string) {
 	for i, field := range entry.Fields {
 		if field.Name == name {
@@ -37,6 +40,7 @@ func (entry *TextoEntry) SetField(name string, value string) {
 	entry.Fields = append(entry.Fields, field)
 }
 
+// Gets the value for a custom field in an entry.
 func (entry *TextoEntry) GetField(name string) string {
 	for _, field := range entry.Fields {
 		if field.Name == name {
@@ -57,14 +61,17 @@ func (entry *TextoEntry) setCalculatedValues(calculateDates bool) {
 	}
 }
 
+// MarkAsPosted sets the posted on value of the entry.
 func (entry *TextoEntry) MarkAsPosted() {
 	entry.PostedOn = now()
 }
 
+// MarkAsDraft clears the posted on value of the entry.
 func (entry *TextoEntry) MarkAsDraft() {
 	entry.PostedOn = ""
 }
 
+// IsDraft returns true if the posted on value is empty.
 func (entry TextoEntry) IsDraft() bool {
 	return entry.PostedOn == ""
 }

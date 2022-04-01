@@ -22,7 +22,7 @@ func init() {
 
 func StartWebServer(address string, dataFolder string) {
 	log.Printf("Listening for requests at %s\n", "http://"+address)
-	db = textodb.InitTextDb(dataFolder)
+	db = textodb.InitTextoDb(dataFolder)
 	http.HandleFunc("/doc/", dispatcher)
 
 	err := http.ListenAndServe(address, nil)
