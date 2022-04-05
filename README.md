@@ -13,10 +13,9 @@ There is support to add custom single-value string fields to each record.
 
 ## Source code
 
-* `textoDb.go` The main code for the module, functions to fetch and save records are here.
-* `textoEntry.go` Functions specific for individual entries.
+* `textoDb.go` The main code for the module, functions to create, fetch, and update records is here.
+* `textoEntry.go` Functions specific for individual entries. The code to perform most of the IO is here.
 * `nextSequence.go` Calculates new sequence numbers for IDs.
-* `io.go` Read/write functions.
 * `util.go` Miscellanous utilities.
 
 * Folder `demoServer/` is a tiny website showing how to use it from a Go client. File `server.go` shows the functionality to create, display, and update records from inside  a Go website.
@@ -31,7 +30,7 @@ import "github.com/hectorcorrea/textodb"
 // Initialize the database
 // (creates data folder if it does not exist)
 dataFolder := './data'
-db := textodb.InitTextDb(dataFolder)
+db = textodb.InitTextoDb(dataFolder)
 
 
 // Create a new record
@@ -49,7 +48,7 @@ entry, err = db.FindById(entry.Id)
 
 // Update it
 entry.Title = "the updated title"
-entry.Content = "blah blah blah"
+entry.SetContent("blah blah blah")
 entry, err = db.UpdateEntry(entry)
 if err != nil {
     panic(err)

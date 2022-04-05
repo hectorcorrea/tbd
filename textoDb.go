@@ -10,7 +10,7 @@ import (
 
 // TextoDb is the main object to access the database functionality.
 type TextoDb struct {
-	RootDir string
+	RootDir string // Directory where data will be stored
 }
 
 // InitTextoDb initializes a new TextoDb object.
@@ -131,6 +131,6 @@ func (db *TextoDb) saveEntry(entry TextoEntry, setDates bool) (TextoEntry, error
 	// Make sure the entry is linked to this database.
 	entry.db = db
 
-	err := entry.Save(setDates)
+	err := entry.save(setDates)
 	return entry, err
 }
