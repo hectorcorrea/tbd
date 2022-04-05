@@ -3,6 +3,7 @@ package textodb
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,7 +25,7 @@ type TextoEntry struct {
 	db        *TextoDb
 }
 
-// Field represents a custom field in an entry.
+// Field represents a custom field in a a TextoEntry.
 type Field struct {
 	Name  string `xml:"name"`
 	Value string `xml:"value"`
@@ -35,22 +36,40 @@ func newTextoEntry(db *TextoDb, id string) TextoEntry {
 	return TextoEntry{db: db, Id: id}
 }
 
-func newTextoEntryFromDisk(db *TextoDb, id string) TextoEntry {
-	filename := filepath.Join(db.pathForId(id), "metadata.xml")
+// loadTextoEntry loads a TextoEntry from disk
+// Notice that we need a db object here to access the path
+// since there is no entry yet.
+func loadTextoEntry(db *TextoDb, id string) (TextoEntry, error) {
+	// Make sure the Id is valid
+	err := validId(id)
+	if err != nil {
+		logError("loadTextoEntry - invalid Id received", id, nil)
+		return TextoEntry{}, errors.New("Invalid Id received")
+	}
+
+	// Make sure the path exists
+	path := filepath.Join(db.RootDir, id)
+	if !dirExist(path) {
+		logError("loadTextoEntry - path not found", path, nil)
+		return TextoEntry{}, errors.New("Path not found")
+	}
+
+	// Open the metadata file...
+	filename := filepath.Join(path, "metadata.xml")
 	reader, err := os.Open(filename)
 	if err != nil {
-		logError("Error reading metadata file", filename, err)
-		return TextoEntry{}
+		logError("loadTextoEntry - error reading metadata file", filename, err)
+		return TextoEntry{}, err
 	}
 	defer reader.Close()
 
-	// Read the bytes and unmarshall into our TextoEntry struct
-	byteValue, _ := ioutil.ReadAll(reader)
+	// ...and read it into a TextoEntry struct
+	byteValue, err := ioutil.ReadAll(reader)
 	var entry TextoEntry
 	xml.Unmarshal(byteValue, &entry)
 	entry.Id = id
 	entry.db = db
-	return entry
+	return entry, err
 }
 
 func (entry *TextoEntry) Path() string {
@@ -66,6 +85,8 @@ func (entry *TextoEntry) contentFile() string {
 }
 
 func (entry TextoEntry) Content() string {
+	// TODO: should we cache this value so that multiple calls to Content()
+	// don't re-read the file on disk?
 	content, err := ioutil.ReadFile(entry.contentFile())
 	if err != nil {
 		logError("Error reading content file", entry.contentFile(), err)
@@ -77,8 +98,23 @@ func (entry *TextoEntry) SetContent(content string) {
 	entry.content = content
 }
 
-func (entry *TextoEntry) Save() error {
-	// Create the directory for it if it does not exist
+func (entry *TextoEntry) Save(setDates bool) error {
+	// Make sure the Id is valid
+	err := validId(entry.Id)
+	if err != nil {
+		return err
+	}
+
+	// Make sure entry is linked to a database.
+	if entry.db == nil {
+		err := errors.New("No db set on entry")
+		logError("Cannot save entry without a db value", entry.Id, err)
+		return err
+	}
+
+	entry.setCalculatedValues(setDates)
+
+	// Create the directory for it if does not exist
 	path := entry.Path()
 	if !dirExist(path) {
 		logInfo("Creating path", path)
@@ -89,7 +125,7 @@ func (entry *TextoEntry) Save() error {
 	}
 
 	// Save metadata + content
-	err := entry.saveMetadata()
+	err = entry.saveMetadata()
 	if err != nil {
 		return err
 	}
@@ -141,9 +177,9 @@ func (entry *TextoEntry) GetField(name string) string {
 	return ""
 }
 
-func (entry *TextoEntry) setCalculatedValues(calculateDates bool) {
+func (entry *TextoEntry) setCalculatedValues(setDates bool) {
 	entry.Slug = slug(entry.Title)
-	if calculateDates {
+	if setDates {
 		if entry.CreatedOn == "" {
 			entry.CreatedOn = now()
 		} else {

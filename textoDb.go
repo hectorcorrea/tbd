@@ -3,7 +3,6 @@
 package textodb
 
 import (
-	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -86,7 +85,7 @@ func (db *TextoDb) All() []TextoEntry {
 		}
 		if info.IsDir() {
 			id := idFromPath(path)
-			entry, err := db.readEntry(id)
+			entry, err := loadTextoEntry(db, id)
 			if err == nil {
 				entries = append(entries, entry)
 			}
@@ -103,15 +102,7 @@ func (db *TextoDb) All() []TextoEntry {
 
 // Finds an entry by Id
 func (db *TextoDb) FindById(id string) (TextoEntry, error) {
-	err := validId(id)
-	if err != nil {
-		// Return the error (rather than false) because if someone is
-		// passing an Id they probably expect the record to be found
-		// and knowing why it was not found would probably be useful
-		// to them.
-		return TextoEntry{}, err
-	}
-	return db.readEntry(id)
+	return loadTextoEntry(db, id)
 }
 
 // Finds an entry by Slug
@@ -134,33 +125,10 @@ func (db *TextoDb) FindBy(field string, value string) (TextoEntry, bool) {
 	return TextoEntry{}, false
 }
 
-func (db *TextoDb) readEntry(id string) (TextoEntry, error) {
-	path := filepath.Join(db.RootDir, id)
-	if !dirExist(path) {
-		logError("ReadEntry did not find path", path, nil)
-		return TextoEntry{}, errors.New("Path not found")
-	}
+func (db *TextoDb) saveEntry(entry TextoEntry, setDates bool) (TextoEntry, error) {
+	// Make sure the entry is linked to this database.
+	entry.db = db
 
-	entry := newTextoEntryFromDisk(db, id)
-	return entry, nil
-}
-
-func (db *TextoDb) entryPath(entry TextoEntry) string {
-	return db.pathForId(entry.Id)
-}
-
-func (db *TextoDb) pathForId(id string) string {
-	return filepath.Join(db.RootDir, id)
-}
-
-func (db *TextoDb) saveEntry(entry TextoEntry, calculateDates bool) (TextoEntry, error) {
-	err := validId(entry.Id)
-	if err != nil {
-		return entry, err
-	}
-
-	entry.setCalculatedValues(calculateDates)
-
-	err = entry.Save()
+	err := entry.Save(setDates)
 	return entry, err
 }
