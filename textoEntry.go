@@ -13,16 +13,17 @@ import (
 // It includes the information stored in the metadata file
 // plus the informtion stored in the content file.
 type TextoEntry struct {
-	Id        string  `xml:"-"` // not stored
-	Title     string  `xml:"title"`
-	Slug      string  `xml:"slug"`
-	Summary   string  `xml:"summary"`
-	content   string  `xml:"-"` // stored in separate doc
-	CreatedOn string  `xml:"createdOn"`
-	UpdatedOn string  `xml:"updatedOn"`
-	PostedOn  string  `xml:"postedOn"`
-	Fields    []Field `xml:"fields"` // client managed fields
-	db        *TextoDb
+	Id             string `xml:"-"` // not stored
+	Title          string `xml:"title"`
+	Slug           string `xml:"slug"`
+	Summary        string `xml:"summary"`
+	content        string `xml:"-"` // stored in separate doc
+	contentChanged bool
+	CreatedOn      string  `xml:"createdOn"`
+	UpdatedOn      string  `xml:"updatedOn"`
+	PostedOn       string  `xml:"postedOn"`
+	Fields         []Field `xml:"fields"` // client managed fields
+	db             *TextoDb
 }
 
 // Field represents a custom field in a a TextoEntry.
@@ -72,18 +73,19 @@ func loadTextoEntry(db *TextoDb, id string) (TextoEntry, error) {
 	return entry, err
 }
 
-func (entry *TextoEntry) Path() string {
+func (entry *TextoEntry) path() string {
 	return filepath.Join(entry.db.RootDir, entry.Id)
 }
 
 func (entry *TextoEntry) metadataFile() string {
-	return filepath.Join(entry.Path(), "metadata.xml")
+	return filepath.Join(entry.path(), "metadata.xml")
 }
 
 func (entry *TextoEntry) contentFile() string {
-	return filepath.Join(entry.Path(), "content.md")
+	return filepath.Join(entry.path(), "content.md")
 }
 
+// Content retrieves from disk the content associated with this entry.
 func (entry TextoEntry) Content() string {
 	// TODO: should we cache this value so that multiple calls to Content()
 	// don't re-read the file on disk?
@@ -94,7 +96,9 @@ func (entry TextoEntry) Content() string {
 	return string(content)
 }
 
+// SetContent sets a new value for the content
 func (entry *TextoEntry) SetContent(content string) {
+	entry.contentChanged = true
 	entry.content = content
 }
 
@@ -115,7 +119,7 @@ func (entry *TextoEntry) Save(setDates bool) error {
 	entry.setCalculatedValues(setDates)
 
 	// Create the directory for it if does not exist
-	path := entry.Path()
+	path := entry.path()
 	if !dirExist(path) {
 		logInfo("Creating path", path)
 		if err := os.MkdirAll(path, os.ModePerm); err != nil {
@@ -124,18 +128,27 @@ func (entry *TextoEntry) Save(setDates bool) error {
 		}
 	}
 
-	// Save metadata + content
+	// Save metadata
 	err = entry.saveMetadata()
 	if err != nil {
 		return err
 	}
-	return entry.saveContent()
+
+	// And the content (if it changed)
+	if entry.contentChanged {
+		err = entry.saveContent()
+		if err != nil {
+			return nil
+		}
+		entry.contentChanged = false
+	}
+
+	return nil
 }
 
 func (entry *TextoEntry) saveMetadata() error {
 	// Convert our TextoEntry struct to an XML string...
-	xmlDeclaration := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-	buffer := bytes.NewBufferString(xmlDeclaration)
+	buffer := bytes.NewBufferString(xml.Header)
 	encoder := xml.NewEncoder(buffer)
 	encoder.Indent("  ", "    ")
 

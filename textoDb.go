@@ -44,6 +44,7 @@ func (db *TextoDb) NewEntry() (TextoEntry, error) {
 	id := db.getNextId()
 	entry := newTextoEntry(db, id)
 	entry.Title = "new " + id
+	entry.contentChanged = true
 	return db.saveEntry(entry, true)
 }
 
@@ -61,6 +62,7 @@ func (db *TextoDb) NewEntryFor(date string, time string) (TextoEntry, error) {
 	entry := newTextoEntry(db, id)
 	entry.Title = "new " + id
 	entry.CreatedOn = date + " " + time
+	entry.contentChanged = true
 	return db.saveEntry(entry, true)
 }
 
