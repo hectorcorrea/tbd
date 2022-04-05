@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // TextoDb is the main object to access the database functionality.
@@ -44,7 +43,7 @@ func InitTextoDb(rootDir string) TextoDb {
 // in the form yyyy-mm-dd-00000, e.g. "2022-03-25-00001"
 func (db *TextoDb) NewEntry() (TextoEntry, error) {
 	id := db.getNextId()
-	entry := NewTextoEntry(id)
+	entry := newTextoEntry(db, id)
 	entry.Title = "new " + id
 	return db.saveEntry(entry, true)
 }
@@ -60,7 +59,7 @@ func (db *TextoDb) NewEntry() (TextoEntry, error) {
 // but using the date provided.
 func (db *TextoDb) NewEntryFor(date string, time string) (TextoEntry, error) {
 	id := db.getNextIdFor(date)
-	entry := NewTextoEntry(id)
+	entry := newTextoEntry(db, id)
 	entry.Title = "new " + id
 	entry.CreatedOn = date + " " + time
 	return db.saveEntry(entry, true)
@@ -142,21 +141,16 @@ func (db *TextoDb) readEntry(id string) (TextoEntry, error) {
 		return TextoEntry{}, errors.New("Path not found")
 	}
 
-	entry := readMetadata(filepath.Join(path, "metadata.xml"))
-	entry.Id = idFromPath(path)
-	entry.Content = readContent(filepath.Join(path, "content.md"))
+	entry := newTextoEntryFromDisk(db, id)
 	return entry, nil
 }
 
-// Returns the full path to an entry
 func (db *TextoDb) entryPath(entry TextoEntry) string {
-	return filepath.Join(db.RootDir, entry.Id)
+	return db.pathForId(entry.Id)
 }
 
-// Returns the Id from a path (i.e. the last segment of the path)
-func idFromPath(path string) string {
-	pathTokens := strings.Split(path, string(os.PathSeparator))
-	return pathTokens[len(pathTokens)-1]
+func (db *TextoDb) pathForId(id string) string {
+	return filepath.Join(db.RootDir, id)
 }
 
 func (db *TextoDb) saveEntry(entry TextoEntry, calculateDates bool) (TextoEntry, error) {
@@ -167,19 +161,6 @@ func (db *TextoDb) saveEntry(entry TextoEntry, calculateDates bool) (TextoEntry,
 
 	entry.setCalculatedValues(calculateDates)
 
-	// Create the directory for it if it does not exist
-	path := db.entryPath(entry)
-	if !dirExist(path) {
-		logInfo("Creating path", path)
-		if err := os.MkdirAll(path, os.ModePerm); err != nil {
-			logError("Error creating path", path, err)
-			return entry, err
-		}
-	}
-	// Save metadata + content
-	err = saveMetadata(path, entry)
-	if err == nil {
-		err = saveContent(path, entry)
-	}
+	err = entry.Save()
 	return entry, err
 }

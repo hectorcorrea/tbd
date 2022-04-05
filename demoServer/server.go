@@ -91,7 +91,7 @@ func save(resp http.ResponseWriter, req *http.Request, values map[string]string)
 
 	entry.Title = req.FormValue("title")
 	entry.Summary = req.FormValue("summary")
-	entry.Content = req.FormValue("content")
+	entry.SetContent(req.FormValue("content"))
 
 	if req.FormValue("post") == "post" {
 		entry.MarkAsPosted()

@@ -4,9 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 )
+
+func dirExist(name string) bool {
+	file, err := os.Open(name)
+	if os.IsNotExist(err) {
+		return false
+	}
+	defer file.Close()
+	return true
+}
 
 func logInfo(message string, parameter string) {
 	log.Printf("textodb: %s %s", message, parameter)
@@ -35,6 +45,12 @@ func validId(id string) error {
 		}
 	}
 	return nil
+}
+
+// Returns the Id from a path (i.e. the last segment of the path)
+func idFromPath(path string) string {
+	pathTokens := strings.Split(path, string(os.PathSeparator))
+	return pathTokens[len(pathTokens)-1]
 }
 
 func slug(title string) string {
