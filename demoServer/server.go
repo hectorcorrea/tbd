@@ -13,6 +13,8 @@ var router Router
 var db textodb.TextoDb
 
 func init() {
+	router.Add("POST", "/:id/post", post)
+	router.Add("POST", "/:id/draft", draft)
 	router.Add("POST", "/:id/edit", edit)
 	router.Add("POST", "/:id/save", save)
 	router.Add("POST", "/new", new)
@@ -66,18 +68,7 @@ func new(resp http.ResponseWriter, req *http.Request, values map[string]string) 
 		return
 	}
 
-	qs := req.URL.Query()
-	if len(qs["redirect"]) > 0 {
-		url := fmt.Sprintf("/%s/%s", entry.Slug, entry.Id)
-		log.Printf("Created %s, redirecting to %s", entry.Id, url)
-		http.Redirect(resp, req, url, 301)
-		return
-	}
-
-	log.Printf("Created %s %s", entry.Id, entry.Slug)
-	payload := fmt.Sprintf(`{ "id": "%s", "slug": "%s"}`, entry.Id, entry.Slug)
-	resp.Header().Add("Content-Type", "text/json")
-	fmt.Fprint(resp, payload)
+	renderAfterSave(resp, req, entry, "Created", nil)
 }
 
 func save(resp http.ResponseWriter, req *http.Request, values map[string]string) {
@@ -91,15 +82,40 @@ func save(resp http.ResponseWriter, req *http.Request, values map[string]string)
 
 	entry.Title = req.FormValue("title")
 	entry.Summary = req.FormValue("summary")
-	entry.Content = req.FormValue("content")
+	entry.SetContent(req.FormValue("content"))
+	entry, err = db.UpdateEntry(entry)
+	renderAfterSave(resp, req, entry, "Saved", err)
+}
 
-	if req.FormValue("post") == "post" {
-		entry.MarkAsPosted()
-	} else if req.FormValue("draft") == "draft" {
-		entry.MarkAsDraft()
+func post(resp http.ResponseWriter, req *http.Request, values map[string]string) {
+	id := values["id"]
+	entry, err := db.FindById(id)
+	if err != nil {
+		log.Printf("Error fetching document to save: %s", err)
+		http.Error(resp, "Error processing request", http.StatusInternalServerError)
+		return
 	}
 
+	entry.MarkAsPosted()
 	entry, err = db.UpdateEntry(entry)
+	renderAfterSave(resp, req, entry, "Posted", err)
+}
+
+func draft(resp http.ResponseWriter, req *http.Request, values map[string]string) {
+	id := values["id"]
+	entry, err := db.FindById(id)
+	if err != nil {
+		log.Printf("Error fetching document to save: %s", err)
+		http.Error(resp, "Error processing request", http.StatusInternalServerError)
+		return
+	}
+
+	entry.MarkAsDraft()
+	entry, err = db.UpdateEntry(entry)
+	renderAfterSave(resp, req, entry, "Marked as Draft", err)
+}
+
+func renderAfterSave(resp http.ResponseWriter, req *http.Request, entry textodb.TextoEntry, action string, err error) {
 	if err != nil {
 		log.Printf("Error saving document: %s", err)
 		http.Error(resp, "Error processing request", http.StatusInternalServerError)
@@ -108,13 +124,15 @@ func save(resp http.ResponseWriter, req *http.Request, values map[string]string)
 
 	qs := req.URL.Query()
 	if len(qs["redirect"]) > 0 {
+		// Redirect to view page
 		url := fmt.Sprintf("/%s/%s", entry.Slug, entry.Id)
-		log.Printf("Saved %s, redirecting to %s", entry.Id, url)
+		log.Printf("%s %s, redirecting to %s", action, entry.Id, url)
 		http.Redirect(resp, req, url, 301)
 		return
 	}
 
-	log.Printf("Saved %s", entry.Id)
+	// Return JSON payload
+	log.Printf("%s %s", action, entry.Id)
 	payload := fmt.Sprintf(`{ "id": "%s", "slug": "%s"}`, entry.Id, entry.Slug)
 	resp.Header().Add("Content-Type", "text/json")
 	fmt.Fprint(resp, payload)

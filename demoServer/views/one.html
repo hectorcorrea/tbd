@@ -1,10 +1,20 @@
 {{ define "content" }}
+<style>
+  .content {
+    font-family: monospace;
+  }
+
+  .options-form {
+    display: inline;
+  }
+
+</style>
 <div>
   <a href="/">Show All</a>
 </div>
 <h1>{{ $.Title }}</h1>
 <p>
-  posted on:
+  <b>Posted on:</b>
   {{ if $.IsDraft }}
   (draft)
   {{ else }}
@@ -13,19 +23,37 @@
 </p>
 
 <div>
-  <p>{{ $.Summary }}</p>
+  <p><b>Slug:</b> {{ $.Slug}}</p>
 </div>
 
 <div>
-  <p>Content: {{ $.Content }}</p>
+  <p><b>ID:</b> {{ $.Id }}</p>
 </div>
 
-<form action="/{{ $.Id }}/edit" method="post">
-  <button>Edit Document</button>
-</form>
+<div>
+  <p><b>Summary:</b> {{ $.Summary }}</p>
+</div>
 
 <div>
-  <p>slug: {{ $.Slug}}</p>
-  <p>id: {{ $.Id }}</p>
+  <p><b>Content:</b></p>
+  <p class="content">{{ $.Content }}</p>
+</div>
+
+<div>
+  <form class="options-form" action="/{{ $.Id }}/edit" method="post">
+    <button>Edit Document</button>
+  </form>
+  {{ if .IsDraft }}
+    <form class="options-form" action="/{{ $.Id }}/post?redirect" method="post">
+      <button name="post" id="post" type="submit" value="post">Post Document</button>
+    </form>
+  {{ else }}
+    <form class="options-form" action="/{{ $.Id }}/draft?redirect" method="post">
+      <button name="draft" id="draft" type="submit" value="draft">Mark as draft</button>
+    </form>
+  {{ end }}
+</div>
+
+<div>
 </div>
 {{ end }}

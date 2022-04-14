@@ -1,5 +1,16 @@
 {{ define "content" }}
 
+<style>
+  .title {
+    margin-bottom: 0px;
+  }
+
+  .summary {
+    margin-left: 50px;
+    margin-top: 0px;
+  }
+</style>
+
 <h1>All Documents</h1>
 
 <form action="/new?redirect" method="post">
@@ -7,15 +18,16 @@
 </form>
 
 <div class="row">
-  <ul>
-    {{ range $key, $doc := . }}
-      <li><a href="/{{ $doc.Slug }}/{{ $doc.Id }}">{{ $doc.Title }}</a>
+  {{ range $key, $doc := . }}
+    <div>
+      <p class="title"><a href="/{{ $doc.Slug }}/{{ $doc.Id }}">{{ $doc.Title }}</a>
       {{ if $doc.IsDraft }}
         (draft)
       {{ end }}
-      </li>
-    {{ end }}
-  </ul>
+      </p>
+      <p class="summary">{{ $doc.Summary }}</p>
+    </div>
+  {{ end }}
 </div>
 
 {{ end }}
